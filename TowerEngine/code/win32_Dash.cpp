@@ -454,8 +454,11 @@ GetGameCodeLastWriteTime()
 {
 	FILETIME LastWriteTime = {};
 
+	char DllName[MAX_PATH] = {};
+	ConcatCharArrays(GameDllFileName, ".dll", DllName);
+
 	WIN32_FILE_ATTRIBUTE_DATA Data;
-	if (GetFileAttributesEx("OriginTower.dll", GetFileExInfoStandard, &Data))
+	if (GetFileAttributesEx(DllName, GetFileExInfoStandard, &Data))
 	{
 		LastWriteTime = Data.ftLastWriteTime;
 	}
@@ -490,7 +493,7 @@ int32 main (int32 argc, char **argv)
 	ScreenBuffer.Width = 1366;
 	ScreenBuffer.Height = 768;
 
-	GLFWwindow* OpenGLWindow = glfwCreateWindow(ScreenBuffer.Width, ScreenBuffer.Height, "Origin Tower", NULL, NULL);
+	GLFWwindow* OpenGLWindow = glfwCreateWindow(ScreenBuffer.Width, ScreenBuffer.Height, "Tower", NULL, NULL);
 	if (!OpenGLWindow)
 	{
 		glfwTerminate();

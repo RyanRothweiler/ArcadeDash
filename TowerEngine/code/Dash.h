@@ -138,6 +138,14 @@ struct game_state
 {
 	uint32 RandomGenState;
 
+	vector2 PlayerPos;
+	vector2 PlayerMovingDirection;
+
+	vector2 BoxPos; 
+
+	vector2 WorldCenter;
+	vector2 CamCenter;
+
 	uint32 RenderTexturesCount;
 	gl_texture RenderTextures[300];
 	uint32 RenderSquaresCount;
