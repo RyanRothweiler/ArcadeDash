@@ -6,11 +6,16 @@ static bool PRINTFPS = false;
 
 bool GlobalRunning = true;
 window_info ScreenBuffer;
+char *GameDllFileName = "Dash";
+
+//NOTE try not to use this global pointer. This is only necessary for PlatformSaveState. Would be good to get rid of this global.
+game_memory *GlobalGameMemory;
+
+// NOTE this three vars should not be global
 int64 ElapsedFrameCount;
 int64 PerfCountFrequency;
 LPDIRECTSOUNDBUFFER SoundSecondaryBuffer;
 
-char *GameDllFileName = "Dash";
 
 struct win32_game_code
 {
@@ -368,7 +373,9 @@ SaveSate(char *FileName, game_memory *GameMemory)
 {
 	DebugLine("Saving State");
 
-	HANDLE FileHandle = CreateFileA(FileName, GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
+	char FinalFileName[MAX_PATH] = {};
+	ConcatCharArrays("Saved States/", FileName, FinalFileName);
+	HANDLE FileHandle = CreateFileA(FinalFileName, GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
 	// NOTE if totalsize if greater than 4gb then we must write a for loop to loop over the write file.
 	DWORD BytesWritten = {};
 	bool32 Success = WriteFile(FileHandle, GameMemory->GameMemoryBlock, (DWORD)GameMemory->TotalSize, &BytesWritten, 0);
@@ -380,13 +387,13 @@ SaveSate(char *FileName, game_memory *GameMemory)
 }
 
 void
-LoadState(char *FileName, game_memory *GameMemory, win32_game_code *GameCode)
+LoadState(char *FileName, game_memory *GameMemory)
 {
-	HANDLE FileHandle = CreateFileA(FileName, GENERIC_READ,  0, 0, OPEN_EXISTING, 0, 0);
+	char FinalFileName[MAX_PATH] = {};
+	ConcatCharArrays("Saved States/", FileName, FinalFileName);
+	HANDLE FileHandle = CreateFileA(FinalFileName, GENERIC_READ,  0, 0, OPEN_EXISTING, 0, 0);
 	DWORD BytesRead;
 	bool32 Success = ReadFile(FileHandle, GameMemory->GameMemoryBlock, (DWORD)GameMemory->TotalSize, &BytesRead, 0);
-
-	GameCode->GameLoadAssets(GameMemory);
 
 	if (!Success)
 	{
@@ -449,6 +456,16 @@ PLATFORM_READ_FILE(PlatformReadFile)
 	return (Result);
 }
 
+PLATFORM_SAVE_STATE(PlatformSaveState)
+{
+	SaveSate(FilePath, GlobalGameMemory);
+}
+
+PLATFORM_LOAD_STATE(PlatformLoadState)
+{
+	LoadState(FilePath, GlobalGameMemory);
+}
+
 inline FILETIME
 GetGameCodeLastWriteTime()
 {
@@ -467,8 +484,7 @@ GetGameCodeLastWriteTime()
 }
 
 void
-CheckSaveState(char *FilePath, input_button *ButtonChecking, bool32 SelectIsDown,
-               game_memory *GameMemory, win32_game_code *GameCode)
+CheckSaveState(char *FilePath, input_button *ButtonChecking, bool32 SelectIsDown, game_memory *GameMemory)
 {
 	if (ButtonChecking->OnDown && SelectIsDown)
 	{
@@ -476,7 +492,7 @@ CheckSaveState(char *FilePath, input_button *ButtonChecking, bool32 SelectIsDown
 	}
 	if (ButtonChecking->OnDown && !SelectIsDown)
 	{
-		LoadState(FilePath, GameMemory, GameCode);
+		LoadState(FilePath, GameMemory);
 	}
 }
 
@@ -535,7 +551,10 @@ int32 main (int32 argc, char **argv)
 	DWORD error = GetLastError();
 	GameMemory.PermanentStorage = GameMemory.GameMemoryBlock;
 	GameMemory.TransientStorage = (uint8 *)GameMemory.PermanentStorage + GameMemory.PermanentStorageSize;
+
 	GameMemory.PlatformReadFile = PlatformReadFile;
+	GameMemory.PlatformSaveState = PlatformSaveState;
+	GameMemory.PlatformLoadState = PlatformLoadState;
 
 	LARGE_INTEGER PreviousFrameCount = GetWallClock();
 
@@ -548,6 +567,8 @@ int32 main (int32 argc, char **argv)
 	bool SoundIsValid = false;
 
 	int16 *AudioSamplesMemory = (int16 *)VirtualAlloc(0, SoundOutput.SecondaryBufferSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+
+	GlobalGameMemory = &GameMemory;
 
 	HWND WindowHandle = glfwGetWin32Window(OpenGLWindow);
 	LoadDirectSound(WindowHandle, &SoundOutput);
@@ -612,10 +633,10 @@ int32 main (int32 argc, char **argv)
 			}
 		}
 
-		// CheckSaveState("SateSlot1.ts", &GameInput.R1, GameInput.Select.IsDown, &GameMemory, &GameCode);
-		CheckSaveState("SateSlot2.ts", &GameInput.L1, GameInput.Select.IsDown, &GameMemory, &GameCode);
-		CheckSaveState("SateSlot3.ts", &GameInput.R2, GameInput.Select.IsDown, &GameMemory, &GameCode);
-		CheckSaveState("SateSlot4.ts", &GameInput.L2, GameInput.Select.IsDown, &GameMemory, &GameCode);
+		CheckSaveState("SateSlot1.ts", &GameInput.R1, GameInput.Select.IsDown, &GameMemory);
+		CheckSaveState("SateSlot2.ts", &GameInput.L1, GameInput.Select.IsDown, &GameMemory);
+		CheckSaveState("SateSlot3.ts", &GameInput.R2, GameInput.Select.IsDown, &GameMemory);
+		CheckSaveState("SateSlot4.ts", &GameInput.L2, GameInput.Select.IsDown, &GameMemory);
 
 		LARGE_INTEGER AudioWallClock = GetWallClock();
 		real32 FromBeginToAudioSeconds = GetSecondsElapsed(FlipWallClock, AudioWallClock);
@@ -680,18 +701,7 @@ int32 main (int32 argc, char **argv)
 			GameAudio.Samples = AudioSamplesMemory;
 		}
 
-		GameCode.GameLoop(&GameMemory, &GameInput, &ScreenBuffer, &GameAudio);
-		FillSoundOutput(&GameAudio, &SoundOutput, ByteToLock, BytesToWrite);
-
 		game_state *GameStateFromMemory = (game_state *)GameMemory.PermanentStorage;
-		char *EmptyChar = "";
-		if (GameStateFromMemory->DebugOutput &&
-		    GameStateFromMemory->DebugOutput != EmptyChar)
-		{
-			DebugLine(GameStateFromMemory->DebugOutput);
-			GameStateFromMemory->DebugOutput = EmptyChar;
-		}
-
 		SYSTEMTIME SystemTime = {};
 		GetSystemTime(&SystemTime);
 		GameStateFromMemory->RandomGenState += SystemTime.wMilliseconds + SystemTime.wSecond + SystemTime.wMinute +
@@ -699,6 +709,18 @@ int32 main (int32 argc, char **argv)
 		if (GameStateFromMemory->RandomGenState > 100000)
 		{
 			GameStateFromMemory->RandomGenState = 0;
+		}
+
+		GameCode.GameLoop(&GameMemory, &GameInput, &ScreenBuffer, &GameAudio);
+		FillSoundOutput(&GameAudio, &SoundOutput, ByteToLock, BytesToWrite);
+
+		GameStateFromMemory = (game_state *)GameMemory.PermanentStorage;
+		char *EmptyChar = "";
+		if (GameStateFromMemory->DebugOutput &&
+		    GameStateFromMemory->DebugOutput != EmptyChar)
+		{
+			DebugLine(GameStateFromMemory->DebugOutput);
+			GameStateFromMemory->DebugOutput = EmptyChar;
 		}
 
 		glClear(GL_COLOR_BUFFER_BIT);

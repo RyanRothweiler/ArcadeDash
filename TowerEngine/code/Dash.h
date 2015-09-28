@@ -134,24 +134,72 @@ struct gl_line
 	color Color;
 };
 
+enum entity_type
+{
+	ENTITY_TYPE_WALL,
+	ENTITY_TYPE_ENEMY,
+};
+// const uint16 ENTITY_WALL = 1;
+
+struct active_entity
+{
+	vector2 ForceOn;
+	vector2 Position;
+	vector2 Velocity;
+
+	real32 MovementSpeed;
+
+	color Color;
+
+	uint16 ColliderWidth;
+	bool32 OnCollide;
+	bool32 IsColliding;
+	active_entity *CollidingWith;
+	vector2 CollideDirection;
+
+	bool32 Alive;
+	entity_type Type;
+};
+
+struct player
+{
+	vector2 MovingDirection;
+	real32 SpeedCoeficient;
+	real32 BaseSpeed;
+	active_entity Entity;
+
+	uint64 DashStartFrame;
+	uint64 DashFrameLength;
+	bool32 IsDashing;
+	color DashColor;
+	color BaseColor;
+};
+
 struct game_state
 {
 	uint32 RandomGenState;
 
-	vector2 PlayerPos;
-	vector2 PlayerMovingDirection;
-
-	vector2 BoxPos; 
+	player Player;
 
 	vector2 WorldCenter;
 	vector2 CamCenter;
 
+	uint32 EntityBucketCount;
+	active_entity EntityBucket[200];
+
 	uint32 RenderTexturesCount;
 	gl_texture RenderTextures[300];
 	uint32 RenderSquaresCount;
-	gl_square RenderSquares[50];
+	gl_square RenderSquares[300];
 	uint32 RenderLinesCount;
 	gl_line RenderLines[50];
+
+	int32 WorldEntityCount;
+	active_entity *WorldEntities[300];
+
+	real64 TimeRate;
+
+	uint64 FrameCounter;
 
 	bool PrintFPS;
 	char *DebugOutput = "";
@@ -163,8 +211,15 @@ struct read_file_result
 	void *Contents;
 };
 
+
 #define PLATFORM_READ_FILE(name) read_file_result name(char *Path)
 typedef PLATFORM_READ_FILE(platform_read_file);
+
+#define PLATFORM_SAVE_STATE(name) void name(char *FilePath)
+typedef PLATFORM_SAVE_STATE(platform_save_state);
+
+#define PLATFORM_LOAD_STATE(name) void name(char *FilePath)
+typedef PLATFORM_LOAD_STATE(platform_load_state);
 
 struct game_memory
 {
@@ -181,6 +236,8 @@ struct game_memory
 	int64 ElapsedCycles;
 
 	platform_read_file *PlatformReadFile;
+	platform_save_state *PlatformSaveState;
+	platform_load_state *PlatformLoadState;
 };
 
 #define GAME_LOOP(name) void name(game_memory *Memory, game_input *GameInput, window_info *WindowInfo, game_audio_output_buffer *AudioBuffer)
