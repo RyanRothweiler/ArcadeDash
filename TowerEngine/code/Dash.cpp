@@ -79,6 +79,7 @@ GetNewSingleEntity(game_state *GameState)
 	GameState->EntityBucketCount++;
 	return (Result);
 }
+
 extern "C" GAME_LOOP(GameLoop)
 {
 	PlatformReadFile = Memory->PlatformReadFile;
