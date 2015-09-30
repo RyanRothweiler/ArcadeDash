@@ -11,6 +11,9 @@ char *GameDllFileName = "Dash";
 //NOTE try not to use this global pointer. This is only necessary for PlatformSaveState. Would be good to get rid of this global.
 game_memory *GlobalGameMemory;
 
+//NOTE this is used by the OpenGLKeyboardCallback. Would be better if this wasn't global but I don't know if there is an optinon.
+game_input *GlobalGameInput;
+
 // NOTE this three vars should not be global
 int64 ElapsedFrameCount;
 int64 PerfCountFrequency;
@@ -496,6 +499,31 @@ CheckSaveState(char *FilePath, input_button *ButtonChecking, bool32 SelectIsDown
 	}
 }
 
+void
+ProcessGLKeyboardInput(int ButtonFromGL, int GLButton, input_button *GameButton, int Action)
+{
+	if (ButtonFromGL == GLButton && (Action == GLFW_REPEAT || Action == GLFW_PRESS))
+	{
+		ProcessButtonInput(GameButton, true);
+	}
+	else
+	{
+		ProcessButtonInput(GameButton, false);
+	}
+}
+
+void
+OpenGLKeyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	//NOTE here is where we map the keyboard keys to the controller. For custom mappings change this.
+	ProcessGLKeyboardInput(key, GLFW_KEY_W, &GlobalGameInput->DUp, action);
+	ProcessGLKeyboardInput(key, GLFW_KEY_S, &GlobalGameInput->DDown, action);
+	ProcessGLKeyboardInput(key, GLFW_KEY_D, &GlobalGameInput->DRight, action);
+	ProcessGLKeyboardInput(key, GLFW_KEY_A, &GlobalGameInput->DLeft, action);
+	ProcessGLKeyboardInput(key, GLFW_KEY_SPACE, &GlobalGameInput->AButton, action);
+	ProcessGLKeyboardInput(key, GLFW_KEY_ENTER, &GlobalGameInput->Select, action);
+
+}
 
 int32 main (int32 argc, char **argv)
 {
@@ -512,6 +540,8 @@ int32 main (int32 argc, char **argv)
 	GLFWwindow* OpenGLWindow = glfwCreateWindow(ScreenBuffer.Width, ScreenBuffer.Height, "Tower", NULL, NULL);
 	if (!OpenGLWindow)
 	{
+		Assert(0);
+		//NOTE Open gl failure
 		glfwTerminate();
 		exit(EXIT_FAILURE);
 	}
@@ -522,6 +552,9 @@ int32 main (int32 argc, char **argv)
 	glOrtho(0, ScreenBuffer.Width, ScreenBuffer.Height, 0, -10, 10);
 	glMatrixMode(GL_MODELVIEW);
 	glDisable(GL_DEPTH_TEST);
+
+	glfwSetKeyCallback(OpenGLWindow, OpenGLKeyboardCallback);
+	glfwSetInputMode(OpenGLWindow, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
 	LARGE_INTEGER FrequencyLong;
 	QueryPerformanceFrequency(&FrequencyLong);
@@ -535,6 +568,7 @@ int32 main (int32 argc, char **argv)
 	real64 TargetSecondsElapsedPerFrame = 1.0f / (real64)GameUpdateHz;
 
 	game_input GameInput = {};
+	GlobalGameInput = &GameInput;
 
 
 	// #if INTERNAL

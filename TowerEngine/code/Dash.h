@@ -106,6 +106,7 @@ struct game_input
 	bool32 LeftStickButton;
 
 	bool32 RightStickButton;
+
 };
 
 struct gl_square
