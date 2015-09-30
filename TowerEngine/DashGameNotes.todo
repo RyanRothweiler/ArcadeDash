@@ -7,6 +7,7 @@
 Engine Notes:
  ☐ when an entity dies, remove it from the list, so we don't always have to loop over it.
  ☐ maybe rename active_entity to entity. Not all active_entities actually move around. 
+ ☐ test compile time without opengl stuff
 
 Ideas:
  ☐ player gets faster the more enemies killed, goal is to kill all the enemies in the room

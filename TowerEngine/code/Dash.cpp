@@ -80,6 +80,24 @@ GetNewSingleEntity(game_state *GameState)
 	return (Result);
 }
 
+#define STB_TRUETYPE_IMPLEMENTATION
+#include "stb_truetype.h"
+
+void
+GetFontBitmap()
+{
+	read_file_result FontFile = PlatformReadFile("C:/Windows/Fonts/Gotham Medium");
+
+	stbtt_fontinfo FontInfo;
+	int Width, Height, XOffset, YOffset;
+	stbtt_InitFont(&FontInfo, (uint8 *)FontFile.Contents, stbtt_GetFontOffsetForIndex((uint8 *)FontFile.Contents, 0));
+	uint8 *MonoBitmap = stbtt_GetCodepointBitmap(&FontInfo, 0, stbtt_ScaleForPixelHeight(&FontInfo, 128.0f),
+	                    'J', &Width, &Height, &XOffset, &YOffset);
+
+	stbtt_FreeBitmap(MonoBitmap, 0);
+
+}
+
 extern "C" GAME_LOOP(GameLoop)
 {
 	PlatformReadFile = Memory->PlatformReadFile;
