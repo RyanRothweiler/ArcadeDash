@@ -176,6 +176,11 @@ struct player
 	color BaseColor;
 };
 
+struct font_bitmap_letter
+{
+	void *BitmapData;
+};
+
 struct game_state
 {
 	uint32 RandomGenState;
@@ -204,6 +209,10 @@ struct game_state
 
 	bool PrintFPS;
 	char *DebugOutput = "";
+
+
+	//NOTE probably move this out into a game_data struct sometime.
+	font_bitmap_letter TestLetter;
 };
 
 struct read_file_result
@@ -211,7 +220,6 @@ struct read_file_result
 	uint32 ContentsSize;
 	void *Contents;
 };
-
 
 #define PLATFORM_READ_FILE(name) read_file_result name(char *Path)
 typedef PLATFORM_READ_FILE(platform_read_file);

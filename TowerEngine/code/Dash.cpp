@@ -84,15 +84,56 @@ GetNewSingleEntity(game_state *GameState)
 #include "stb_truetype.h"
 
 void
-GetFontBitmap()
+CreateFontBitmap(game_state *GameState)
 {
-	read_file_result FontFile = PlatformReadFile("C:/Windows/Fonts/Gotham Medium");
+	//NOTE add away to get fonts. Try to load one but default to ariel if can't find a font we want. 
+	// bool32 FoundFont = false;
+	read_file_result FontFile = PlatformReadFile("C:/Windows/Fonts/Arial/Arial Black.ttf");
+	// if (FontFile.ContentsSize == 0)
+	// {
+	// 	read_file_result FontFile = PlatformReadFile("C:/Windows/Fonts/Gotham Medium");
+	// }
+	// else
+	// {
+	// 	FoundFont = true;
+	// }
+
+	// Assert(FoundFont);
 
 	stbtt_fontinfo FontInfo;
 	int Width, Height, XOffset, YOffset;
 	stbtt_InitFont(&FontInfo, (uint8 *)FontFile.Contents, stbtt_GetFontOffsetForIndex((uint8 *)FontFile.Contents, 0));
 	uint8 *MonoBitmap = stbtt_GetCodepointBitmap(&FontInfo, 0, stbtt_ScaleForPixelHeight(&FontInfo, 128.0f),
 	                    'J', &Width, &Height, &XOffset, &YOffset);
+
+	GameState->TestLetter = {};
+	GameState->TestLetter.BitmapData = VirtualAlloc(0, sizeof(*MonoBitmap), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+
+	// uint32 *Source = (uint32 *)BitmapPixels;
+	// for (uint32 PixelIndex = 0;
+	//      PixelIndex < (Result.Width * Result.Height);
+	//      ++PixelIndex)
+	// {
+	// 	uint8 *Pixel = (uint8 *)Source;
+
+	// 	uint8 Bit2 = *Pixel++; // A
+	// 	uint8 Bit3 = *Pixel++; // R
+	// 	uint8 Bit0 = *Pixel++; // G
+	// 	uint8 Bit1 = *Pixel++; // B
+
+	// 	*Source++ = (Bit0 << 24) | (Bit1 << 16) | (Bit2 << 8) | (Bit3 << 0);
+	// }
+
+
+	// glGenTextures(1, &Result.GLTexture);
+	// glBindTexture(GL_TEXTURE_2D, Result.GLTexture);
+
+	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+	// glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+	//              Result.Width, Result.Height,
+	//              0, GL_RGBA, GL_UNSIGNED_BYTE, BitmapPixels);
 
 	stbtt_FreeBitmap(MonoBitmap, 0);
 
@@ -178,6 +219,7 @@ extern "C" GAME_LOOP(GameLoop)
 			}
 		}
 
+		CreateFontBitmap(GameState);
 
 
 		// Entity = GetNewSingleEntity(GameState);
