@@ -80,61 +80,129 @@ GetNewSingleEntity(game_state *GameState)
 	return (Result);
 }
 
+loaded_image
+GLLoadBMP(char *FilePath)
+{
+	loaded_image Result = {};
+
+	read_file_result FileResult = PlatformReadFile(FilePath);
+	uint32 *BitmapPixels = {};
+	if (FileResult.ContentsSize != 0)
+	{
+		bmp_header *Header = (bmp_header *)FileResult.Contents;
+		Result.Width = Header->Width;
+		Result.Height = Header->Height;
+
+		// NOTE this number offset here is pulled from my ass. The offset in the image doesn't seem to work.
+		BitmapPixels = ((uint32 *)FileResult.Contents + 35);
+	}
+	else
+	{
+		// Something went wrong with loading the bmp
+		// NOTE will eventually want to just show a warning. But don't crash the game.
+		Assert(0);
+	}
+
+	uint32 *Source = (uint32 *)BitmapPixels;
+	for (uint32 PixelIndex = 0;
+	     PixelIndex < (Result.Width * Result.Height);
+	     ++PixelIndex)
+	{
+		uint8 *Pixel = (uint8 *)Source;
+
+		uint8 Bit2 = *Pixel++; // A
+		uint8 Bit3 = *Pixel++; // R
+		uint8 Bit0 = *Pixel++; // G
+		uint8 Bit1 = *Pixel++; // B
+
+		*Source++ = (Bit0 << 24) | (Bit1 << 16) | (Bit2 << 8) | (Bit3 << 0);
+	}
+
+
+	glGenTextures(1, &Result.GLTexture);
+	glBindTexture(GL_TEXTURE_2D, Result.GLTexture);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+	             Result.Width, Result.Height,
+	             0, GL_RGBA, GL_UNSIGNED_BYTE, BitmapPixels);
+
+	return (Result);
+}
+
+void
+PushRenderTexture(game_state *GameState, gl_texture *Texture)
+{
+	Assert(_countof(GameState->RenderTextures) > GameState->RenderTexturesCount);
+	GameState->RenderTextures[GameState->RenderTexturesCount].Image = Texture->Image;
+	GameState->RenderTextures[GameState->RenderTexturesCount].Center = Texture->Center;
+	GameState->RenderTextures[GameState->RenderTexturesCount].Scale = Texture->Scale;
+	GameState->RenderTextures[GameState->RenderTexturesCount].RadiansAngle = Texture->RadiansAngle;
+	GameState->RenderTexturesCount++;
+}
+
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "stb_truetype.h"
 
 void
 CreateFontBitmap(game_state *GameState)
 {
-	//NOTE add away to get fonts. Try to load one but default to ariel if can't find a font we want. 
-	// bool32 FoundFont = false;
-	read_file_result FontFile = PlatformReadFile("C:/Windows/Fonts/Arial/Arial Black.ttf");
-	// if (FontFile.ContentsSize == 0)
-	// {
-	// 	read_file_result FontFile = PlatformReadFile("C:/Windows/Fonts/Gotham Medium");
-	// }
-	// else
-	// {
-	// 	FoundFont = true;
-	// }
-
-	// Assert(FoundFont);
+	//TODO add away to get fonts. Try to load one but default to ariel if can't find a font we want.
+	read_file_result FontFile = PlatformReadFile("C:/Windows/Fonts/arial.ttf");
+	Assert(FontFile.Contents > 0);
 
 	stbtt_fontinfo FontInfo;
 	int Width, Height, XOffset, YOffset;
 	stbtt_InitFont(&FontInfo, (uint8 *)FontFile.Contents, stbtt_GetFontOffsetForIndex((uint8 *)FontFile.Contents, 0));
 	uint8 *MonoBitmap = stbtt_GetCodepointBitmap(&FontInfo, 0, stbtt_ScaleForPixelHeight(&FontInfo, 128.0f),
-	                    'J', &Width, &Height, &XOffset, &YOffset);
+	                    'K', &Width, &Height, &XOffset, &YOffset);
 
 	GameState->TestLetter = {};
-	GameState->TestLetter.BitmapData = VirtualAlloc(0, sizeof(*MonoBitmap), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	GameState->TestLetter.LetterBitmap.Width = Width;
+	GameState->TestLetter.LetterBitmap.Height = Height;
+	// GameState->TestLetter.LetterBitmap.GLTexture = VirtualAlloc(0, sizeof(*MonoBitmap), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
-	// uint32 *Source = (uint32 *)BitmapPixels;
-	// for (uint32 PixelIndex = 0;
-	//      PixelIndex < (Result.Width * Result.Height);
-	//      ++PixelIndex)
-	// {
-	// 	uint8 *Pixel = (uint8 *)Source;
+	void *ConvertedBitmap = malloc(sizeof(uint32) * Width * Height);
 
-	// 	uint8 Bit2 = *Pixel++; // A
-	// 	uint8 Bit3 = *Pixel++; // R
-	// 	uint8 Bit0 = *Pixel++; // G
-	// 	uint8 Bit1 = *Pixel++; // B
+	uint32 Pitch = Width * sizeof(uint32);
+	uint8 *Source = (uint8 *)MonoBitmap;
+	uint8 *DestRow = (uint8 *)ConvertedBitmap + ((Height - 1) * Pitch);
+	for (uint32 Y = 0;
+	     Y < (uint32)Height;
+	     ++Y)
+	{
+		uint32 *Dest = (uint32 *)DestRow;
+		for (uint32 X = 0;
+		     X < (uint32)Width;
+		     ++X)
+		{
+			uint8 MonoAlpha = *Source++;
 
-	// 	*Source++ = (Bit0 << 24) | (Bit1 << 16) | (Bit2 << 8) | (Bit3 << 0);
-	// }
+			uint8 Bit2 = MonoAlpha; // A
+			uint8 Bit3 = MonoAlpha; // R
+			uint8 Bit0 = MonoAlpha; // G
+			uint8 Bit1 = MonoAlpha; // B
 
+			*Dest++ = ((Bit0 << 24) | (Bit1 << 16) | (Bit2 << 8) | (Bit3 << 0));
+			// Dest++;
+		}
 
-	// glGenTextures(1, &Result.GLTexture);
-	// glBindTexture(GL_TEXTURE_2D, Result.GLTexture);
+		DestRow -= Pitch;
+	}
 
-	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	//TODO pull this out into a separate GL function to keep gl code separate from game code.
+	glGenTextures(1, &GameState->TestLetter.LetterBitmap.GLTexture);
+	glBindTexture(GL_TEXTURE_2D, GameState->TestLetter.LetterBitmap.GLTexture);
 
-	// glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-	//              Result.Width, Result.Height,
-	//              0, GL_RGBA, GL_UNSIGNED_BYTE, BitmapPixels);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, Width, Height,
+	             0, GL_RGBA, GL_UNSIGNED_BYTE, ConvertedBitmap);
+
+	//NOTE FREE the converted bitmap
 	stbtt_FreeBitmap(MonoBitmap, 0);
 
 }
@@ -157,6 +225,8 @@ extern "C" GAME_LOOP(GameLoop)
 		GameState->WorldCenter = vector2{0, 0};
 		GameState->CamCenter = vector2{(real64)(WindowInfo->Width / 2), (real64)(WindowInfo->Height / 2)};
 
+		GameState->TestImage = GLLoadBMP("../assets/Background.bmp");
+
 		GameState->Player.SpeedCoeficient = 1.0f;
 		GameState->Player.BaseSpeed = 1.0f;
 		GameState->Player.BaseColor = COLOR_BLUE;
@@ -171,7 +241,7 @@ extern "C" GAME_LOOP(GameLoop)
 		GameState->Player.Entity.Alive = true;
 		AddWorldEntity(GameState, &GameState->Player.Entity);
 
-		active_entity *Entity;
+		// active_entity *Entity;
 
 		// Entity Types
 		// 1 - Wall
@@ -193,31 +263,31 @@ extern "C" GAME_LOOP(GameLoop)
 			{1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1},
 			{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
 		};
-		for (uint16 x = 0; x < GridWidth; x++)
-		{
-			for (uint16 y = 0; y < GridHeight; y++)
-			{
-				if (levelGrid[y][x] == 1)
-				{
-					Entity = GetNewSingleEntity(GameState);
-					Entity->Color = COLOR_BLACK;
-					Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
-					Entity->ColliderWidth = cellSize + 1;
-					Entity->Alive = true;
-					Entity->Type = ENTITY_TYPE_WALL;
-				}
+		// for (uint16 x = 0; x < GridWidth; x++)
+		// {
+		// 	for (uint16 y = 0; y < GridHeight; y++)
+		// 	{
+		// 		if (levelGrid[y][x] == 1)
+		// 		{
+		// 			Entity = GetNewSingleEntity(GameState);
+		// 			Entity->Color = COLOR_BLACK;
+		// 			Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
+		// 			Entity->ColliderWidth = cellSize + 1;
+		// 			Entity->Alive = true;
+		// 			Entity->Type = ENTITY_TYPE_WALL;
+		// 		}
 
-				if (levelGrid[y][x] == 2)
-				{
-					Entity = GetNewSingleEntity(GameState);
-					Entity->Color = COLOR_GREEN;
-					Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
-					Entity->ColliderWidth = (uint16)RandomRangeInt(10, 50, GameState);
-					Entity->Alive = true;
-					Entity->Type = ENTITY_TYPE_ENEMY;
-				}
-			}
-		}
+		// 		if (levelGrid[y][x] == 2)
+		// 		{
+		// 			Entity = GetNewSingleEntity(GameState);
+		// 			Entity->Color = COLOR_GREEN;
+		// 			Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
+		// 			Entity->ColliderWidth = (uint16)RandomRangeInt(10, 50, GameState);
+		// 			Entity->Alive = true;
+		// 			Entity->Type = ENTITY_TYPE_ENEMY;
+		// 		}
+		// 	}
+		// }
 
 		CreateFontBitmap(GameState);
 
@@ -354,6 +424,12 @@ extern "C" GAME_LOOP(GameLoop)
 	vector2 PlayerCamDifference = Player->Entity.Position - GameState->WorldCenter;
 	GameState->WorldCenter = GameState->WorldCenter + (PlayerCamDifference * 0.08f * GameState->TimeRate);
 	vector2 WorldCenter = GameState->WorldCenter - GameState->CamCenter;
+
+	gl_texture Texture = {};
+	Texture.Image = &GameState->TestLetter.LetterBitmap;
+	Texture.Center = vector2{100, 100} - WorldCenter;
+	Texture.Scale = vector2{(real64)GameState->TestLetter.LetterBitmap.Width, (real64)GameState->TestLetter.LetterBitmap.Height};
+	PushRenderTexture(GameState, &Texture);
 
 	for (int EntityIndex = 0;
 	     EntityIndex < GameState->WorldEntityCount;

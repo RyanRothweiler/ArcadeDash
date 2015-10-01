@@ -140,7 +140,6 @@ enum entity_type
 	ENTITY_TYPE_WALL,
 	ENTITY_TYPE_ENEMY,
 };
-// const uint16 ENTITY_WALL = 1;
 
 struct active_entity
 {
@@ -178,8 +177,26 @@ struct player
 
 struct font_bitmap_letter
 {
-	void *BitmapData;
+	// void *BitmapData;
+	loaded_image LetterBitmap;
 };
+
+#pragma pack(push, 1)
+struct bmp_header
+{
+	uint16 FileType;
+	uint32 FileSize;
+	uint16 Reserved1;
+	uint16 Reserved2;
+	uint32 BitmapOffset;
+	uint32 Size;
+	int32 Width;
+	int32 Height;
+	uint16 Planes;
+	uint16 BitsPerPixel;
+};
+#pragma pack(pop)
+
 
 struct game_state
 {
@@ -189,6 +206,8 @@ struct game_state
 
 	vector2 WorldCenter;
 	vector2 CamCenter;
+
+	loaded_image TestImage;
 
 	uint32 EntityBucketCount;
 	active_entity EntityBucket[200];
