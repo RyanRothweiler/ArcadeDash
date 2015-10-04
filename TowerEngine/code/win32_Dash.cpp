@@ -29,16 +29,7 @@ struct win32_game_code
 	bool32 IsValid;
 };
 
-int32
-StringLength(char *String)
-{
-	int Count = 0;
-	while (*String++)
-	{
-		++Count;
-	}
-	return (Count);
-}
+
 
 int32
 DigitCount(int64 *Input)
@@ -74,8 +65,8 @@ IntToCharArray(int64 *Input, char *Output)
 void
 ConcatCharArrays(char *SourceA, char *SourceB, char *Destination)
 {
-	int32 SourceALength = StringLength(SourceA);
-	int32 SourceBLength = StringLength(SourceB);
+	int32 SourceALength = CharArrayLength(SourceA);
+	int32 SourceBLength = CharArrayLength(SourceB);
 
 	for (int32 Index = 0;
 	     Index < SourceALength;
@@ -500,7 +491,7 @@ CheckSaveState(char *FilePath, input_button *ButtonChecking, bool32 SelectIsDown
 }
 
 void
-ProcessGLKeyboardInput(int ButtonFromGL, int GLButton, input_button *GameButton, int Action)
+MapGLToGameInput(int ButtonFromGL, int GLButton, input_button *GameButton, int Action)
 {
 	if (ButtonFromGL == GLButton && (Action == GLFW_REPEAT || Action == GLFW_PRESS))
 	{
@@ -516,12 +507,13 @@ void
 OpenGLKeyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	//NOTE here is where we map the keyboard keys to the controller. For custom mappings change this.
-	ProcessGLKeyboardInput(key, GLFW_KEY_W, &GlobalGameInput->DUp, action);
-	ProcessGLKeyboardInput(key, GLFW_KEY_S, &GlobalGameInput->DDown, action);
-	ProcessGLKeyboardInput(key, GLFW_KEY_D, &GlobalGameInput->DRight, action);
-	ProcessGLKeyboardInput(key, GLFW_KEY_A, &GlobalGameInput->DLeft, action);
-	ProcessGLKeyboardInput(key, GLFW_KEY_SPACE, &GlobalGameInput->AButton, action);
-	ProcessGLKeyboardInput(key, GLFW_KEY_ENTER, &GlobalGameInput->Select, action);
+	MapGLToGameInput(key, GLFW_KEY_W, &GlobalGameInput->DUp, action);
+	MapGLToGameInput(key, GLFW_KEY_S, &GlobalGameInput->DDown, action);
+	MapGLToGameInput(key, GLFW_KEY_D, &GlobalGameInput->DRight, action);
+	MapGLToGameInput(key, GLFW_KEY_A, &GlobalGameInput->DLeft, action);
+	MapGLToGameInput(key, GLFW_KEY_E, &GlobalGameInput->YButton, action);
+	MapGLToGameInput(key, GLFW_KEY_SPACE, &GlobalGameInput->AButton, action);
+	MapGLToGameInput(key, GLFW_KEY_ENTER, &GlobalGameInput->Select, action);
 
 }
 

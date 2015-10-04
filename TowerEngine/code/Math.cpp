@@ -1,3 +1,8 @@
+#ifndef MATH_ARCADE
+#define MATH_ARCADE
+
+
+
 #include "Vector2.h"
 #include <math.h>
 
@@ -139,3 +144,5 @@ Min(real64 A, real64 B)
 }
 
 const real64 PI = 3.14159f;
+
+#endif

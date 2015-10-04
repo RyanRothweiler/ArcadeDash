@@ -1,3 +1,6 @@
+#ifndef DASH_H
+#define DASH_H
+
 #define GLFW_DLL
 #define GLFW_EXPOSE_NATIVE_WIN32
 #define GLFW_EXPOSE_NATIVE_WGL
@@ -38,7 +41,8 @@ typedef double real64;
 
 #include "Math.cpp"
 #include "vector2.cpp"
-#include "Color.h"
+#include "Color.cpp"
+#include "String.cpp"
 
 struct game_audio_output_buffer
 {
@@ -81,6 +85,8 @@ struct loaded_image
 
 	GLuint GLTexture;
 };
+
+#include "Font.h"
 
 struct game_input
 {
@@ -175,11 +181,11 @@ struct player
 	color BaseColor;
 };
 
-struct font_bitmap_letter
-{
-	// void *BitmapData;
-	loaded_image LetterBitmap;
-};
+// struct font_bitmap_letter
+// {
+// 	// void *BitmapData;
+// 	loaded_image LetterBitmap;
+// };
 
 #pragma pack(push, 1)
 struct bmp_header
@@ -197,6 +203,11 @@ struct bmp_header
 };
 #pragma pack(pop)
 
+struct read_file_result
+{
+	uint32 ContentsSize;
+	void *Contents;
+};
 
 struct game_state
 {
@@ -212,6 +223,7 @@ struct game_state
 	uint32 EntityBucketCount;
 	active_entity EntityBucket[200];
 
+	//TODO pull these two variables, (the list size and arrays) out into a list structure
 	uint32 RenderTexturesCount;
 	gl_texture RenderTextures[300];
 	uint32 RenderSquaresCount;
@@ -230,14 +242,9 @@ struct game_state
 	char *DebugOutput = "";
 
 
-	//NOTE probably move this out into a game_data struct sometime.
-	font_bitmap_letter TestLetter;
-};
-
-struct read_file_result
-{
-	uint32 ContentsSize;
-	void *Contents;
+	font_utility FontUtility;
+	uint32 AlphabetBitmapsCount;
+	font_codepoint AlphabetBitmaps[200];
 };
 
 #define PLATFORM_READ_FILE(name) read_file_result name(char *Path)
@@ -277,3 +284,5 @@ GAME_LOOP(GameLoopStub)
 typedef GAME_LOAD_ASSETS(game_load_assets);
 GAME_LOAD_ASSETS(GameLoadAssetsStub)
 { }
+
+#endif

@@ -1,4 +1,9 @@
-#include "Vector2.h"
+#ifndef VECTOR2_CPP
+#define VECTOR2_CPP
+
+
+#include "vector2.h"
+
 
 vector2 operator+(vector2 A, vector2 B)
 {
@@ -162,3 +167,5 @@ Vector2RotatePoint(vector2 OriginalPoint, vector2 Center, real64 Angle)
 }
 
 const vector2 VECTOR2_ZERO = vector2{0, 0};
+
+#endif
