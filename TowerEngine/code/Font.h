@@ -5,7 +5,7 @@
 struct font_codepoint
 {
 	loaded_image Bitmap;
-	int32 BaselineFactor;
+	real64 BaselineFactor;
 };
 
 

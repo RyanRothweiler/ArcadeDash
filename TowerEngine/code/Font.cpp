@@ -5,9 +5,15 @@
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "stb_truetype.h"
 
+//TODO there are some weird modifiers and weird things going on in here that aren't clean. Fix it at some point.
+// 1 - Most TopLeft variables are not actually top left, they're bottom middle.
+// 2 - I had to half the final rendering size since the bitmap rendering is janky.
+
 //NOTE Not entirely sure what this does...
 global_variable real64 GlobalFontRenderSize = 200.0f;
 global_variable stbtt_fontinfo GlobalCurrentFontInfo;
+//TODO create a debug build path, so this stuff doesn't compile in the final version.
+global_variable bool32 ShowDebugInfo = true;
 
 void
 MakeBitmapCodepoint(char Letter, platform_read_file *ReadFile, game_state *GameState)
@@ -15,7 +21,6 @@ MakeBitmapCodepoint(char Letter, platform_read_file *ReadFile, game_state *GameS
 	read_file_result FontFile = PlatformReadFile("../Assets/Gotham-Medium.ttf");
 	Assert(FontFile.Contents > 0);
 
-	// stbtt_fontinfo FontInfo;
 	int Width, Height, XOffset, YOffset;
 	stbtt_InitFont(&GlobalCurrentFontInfo, (uint8 *)FontFile.Contents, stbtt_GetFontOffsetForIndex((uint8 *)FontFile.Contents, 0));
 	uint8 *MonoBitmap = stbtt_GetCodepointBitmap(&GlobalCurrentFontInfo, 0, stbtt_ScaleForPixelHeight(&GlobalCurrentFontInfo, (float)GlobalFontRenderSize),
@@ -25,9 +30,12 @@ MakeBitmapCodepoint(char Letter, platform_read_file *ReadFile, game_state *GameS
 	font_codepoint *NextCodepoint = &GameState->AlphabetBitmaps[GameState->AlphabetBitmapsCount];
 	GameState->AlphabetBitmapsCount++;
 
-	int Ascent, Descent, LineGap;
-	stbtt_GetFontVMetrics(&GlobalCurrentFontInfo, &Ascent, &Descent, &LineGap);
-	NextCodepoint->BaselineFactor = YOffset;
+	// int Ascent, Descent, LineGap;
+	// stbtt_GetGlyphVMetrics(&GlobalCurrentFontInfo, &Ascent, &Descent, &LineGap);
+	NextCodepoint->BaselineFactor = (YOffset + Height) * 2;
+
+	//m - 122
+	//n - 
 
 	NextCodepoint->Bitmap.Width = Width;
 	NextCodepoint->Bitmap.Height = Height;
@@ -87,35 +95,53 @@ MakeAlphabetBitmaps(game_state *GameState, platform_read_file *ReadFileFunction)
 	}
 }
 
+//NOTE TopLeft here is not actually TopLeft. It's more bottom Middle.
 void
-FontRenderLetter(char Letter, vector2 TopLeft, real64 Size, game_state *GameState)
+FontRenderLetter(char Letter, vector2 TopLeft, real64 ScaleModifier, game_state *GameState)
 {
+	//NOTE there are half multipliers in here (0.5f) because I'm drawing the bitmaps a bit weird. It's really janky and I'm a little to lazy to fix it since it works.
 	font_codepoint *CodepointUsing = &GameState->AlphabetBitmaps[(uint32)Letter];
 
 	gl_texture Texture = {};
 	Texture.Image = &CodepointUsing->Bitmap;
-	Texture.Center = (TopLeft + vector2{0, (real64)CodepointUsing->BaselineFactor});
-	Texture.Scale = vector2{(real64)CodepointUsing->Bitmap.Width, (real64)(CodepointUsing->Bitmap.Height)} * 0.5f;
-
+	Texture.Center = (TopLeft + (vector2{0, (real64)CodepointUsing->BaselineFactor} * 0.5f)) * ScaleModifier;
+	Texture.Scale = vector2{(real64)CodepointUsing->Bitmap.Width, (real64)(CodepointUsing->Bitmap.Height)} * 0.5f * ScaleModifier;
 	PushRenderTexture(GameState, &Texture);
+
+	if (ShowDebugInfo)
+	{
+		PushRenderSquare(GameState, MakeRectangle(Texture.Center, (int32)(CodepointUsing->Bitmap.Width * ScaleModifier), (int32)(CodepointUsing->Bitmap.Height * ScaleModifier), color{1.0, 0.0, 0.0, 0.5}));
+	}
 }
 
+//NOTE TopLeft here is not actually TopLeft. It's more bottom Middle.
 void
-FontRenderWord(char *Word, vector2 TopLeft, real64 Size, game_state *GameState)
+FontRenderWord(char *Word, vector2 TopLeft, real64 ScaleModifier, game_state * GameState)
 {
 	vector2 PosAt = TopLeft;
-	// real64 FunctionalSize = ((GlobalFontRenderSize * 0.01f) / GlobalFontRenderSize) * Size;
 
+	uint32 WordLength = CharArrayLength(Word);
 	for (uint32 LetterIndex = 0;
-	     LetterIndex < (uint32)CharArrayLength(Word);
+	     LetterIndex < WordLength;
 	     LetterIndex++)
 	{
-		char *Letter = &Word[LetterIndex];
-		FontRenderLetter(*Letter, PosAt,  Size, GameState);
+		if (ShowDebugInfo)
+		{
+			PushRenderSquare(GameState, MakeRectangle(PosAt * ScaleModifier, (int32)(10 * ScaleModifier), (int32)(10 * ScaleModifier), color{0.0, 0.0, 1.0, 0.5}));
+		}
 
-		PosAt.X += GameState->AlphabetBitmaps[(uint32)Word[LetterIndex]].Bitmap.Width;
-		// PosAt.X += (100 * LetterIndex;
+		char *Letter = &Word[LetterIndex];
+		FontRenderLetter(*Letter, PosAt, ScaleModifier, GameState);
+
+		real64 AmountToAdvance = 0;
+		if (LetterIndex + 1 != WordLength)
+		{
+			AmountToAdvance = (GameState->AlphabetBitmaps[(uint32)Word[LetterIndex]].Bitmap.Width / 2) +
+			                  (GameState->AlphabetBitmaps[(uint32)Word[LetterIndex + 1]].Bitmap.Width / 2);
+		}
+		PosAt.X += AmountToAdvance + (5 * ScaleModifier);
 	}
+
 }
 
 #endif

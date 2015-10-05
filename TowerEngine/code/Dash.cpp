@@ -15,6 +15,50 @@ PushRenderTexture(game_state *GameState, gl_texture *Texture)
 	GameState->RenderTexturesCount++;
 }
 
+void
+PushRenderSquare(game_state *GameState, gl_square Square)
+{
+	Assert(_countof(GameState->RenderSquares) > GameState->RenderSquaresCount);
+	GameState->RenderSquares[GameState->RenderSquaresCount].TopLeft = Square.TopLeft;
+	GameState->RenderSquares[GameState->RenderSquaresCount].TopRight = Square.TopRight;
+	GameState->RenderSquares[GameState->RenderSquaresCount].BottomLeft = Square.BottomLeft;
+	GameState->RenderSquares[GameState->RenderSquaresCount].BottomRight = Square.BottomRight;
+	GameState->RenderSquares[GameState->RenderSquaresCount].Color = Square.Color;
+	GameState->RenderSquaresCount++;
+}
+
+gl_square
+MakeRectangle(vector2 Pos, int32 Width, int32 Height, color Color)
+{
+	gl_square Result = {};
+
+	Result.Color = Color;
+
+	int32 HalfWidth = Width / 2;
+	int32 HalfHeight = Height / 2;
+	Result.TopLeft = vector2{Pos.X - HalfWidth, Pos.Y - HalfHeight};
+	Result.TopRight = vector2{Pos.X + HalfWidth, Pos.Y - HalfHeight};
+	Result.BottomLeft = vector2{Pos.X - HalfWidth, Pos.Y + HalfHeight};
+	Result.BottomRight = vector2{Pos.X + HalfWidth, Pos.Y + HalfHeight};
+
+	return (Result);
+}
+
+gl_square
+MakeSquare(vector2 Pos, int32 SideLength, color Color)
+{
+	gl_square Result = {};
+
+	Result.Color = Color;
+
+	int32 HalfSide = SideLength / 2;
+	Result.TopLeft = vector2{Pos.X - HalfSide, Pos.Y - HalfSide};
+	Result.TopRight = vector2{Pos.X + HalfSide, Pos.Y - HalfSide};
+	Result.BottomLeft = vector2{Pos.X - HalfSide, Pos.Y + HalfSide};
+	Result.BottomRight = vector2{Pos.X + HalfSide, Pos.Y + HalfSide};
+
+	return (Result);
+}
 
 #include "Font.cpp"
 
@@ -41,34 +85,6 @@ RandomRangeInt(int32 Bottom, int32 Top, game_state *GameState)
 {
 	real64 Result = RandomRangeFloat((real32)Bottom, (real32)Top, GameState);
 	return ((int64)Result);
-}
-
-void
-PushRenderSquare(game_state *GameState, gl_square Square)
-{
-	Assert(_countof(GameState->RenderSquares) > GameState->RenderSquaresCount);
-	GameState->RenderSquares[GameState->RenderSquaresCount].TopLeft = Square.TopLeft;
-	GameState->RenderSquares[GameState->RenderSquaresCount].TopRight = Square.TopRight;
-	GameState->RenderSquares[GameState->RenderSquaresCount].BottomLeft = Square.BottomLeft;
-	GameState->RenderSquares[GameState->RenderSquaresCount].BottomRight = Square.BottomRight;
-	GameState->RenderSquares[GameState->RenderSquaresCount].Color = Square.Color;
-	GameState->RenderSquaresCount++;
-}
-
-gl_square
-MakeSquare(vector2 Pos, int32 SideLength, color Color)
-{
-	gl_square Result = {};
-
-	Result.Color = Color;
-
-	int32 HalfSide = SideLength / 2;
-	Result.TopLeft = vector2{Pos.X - HalfSide, Pos.Y - HalfSide};
-	Result.TopRight = vector2{Pos.X + HalfSide, Pos.Y - HalfSide};
-	Result.BottomLeft = vector2{Pos.X - HalfSide, Pos.Y + HalfSide};
-	Result.BottomRight = vector2{Pos.X + HalfSide, Pos.Y + HalfSide};
-
-	return (Result);
 }
 
 void
@@ -185,48 +201,48 @@ extern "C" GAME_LOOP(GameLoop)
 		// 1 - Wall
 		// 2 - Enemy
 
-		active_entity *Entity;
-		uint16 cellSize = 150;
-		const uint16 GridWidth = 15;
-		const uint16 GridHeight = 10;
-		uint16 levelGrid[GridHeight][GridWidth] =
-		{
-			{0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-			{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-			{0, 2, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 2, 0, 1},
-			{0, 0, 1, 1, 0, 0, 2, 1, 0, 0, 1, 0, 2, 2, 1},
-			{0, 0, 0, 1, 1, 0, 0, 1, 0, 2, 1, 0, 2, 0, 1},
-			{0, 2, 0, 2, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1},
-			{1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 2, 1, 0, 1},
-			{1, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 1, 0, 2, 1},
-			{1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1},
-			{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-		};
-		for (uint16 x = 0; x < GridWidth; x++)
-		{
-			for (uint16 y = 0; y < GridHeight; y++)
-			{
-				if (levelGrid[y][x] == 1)
-				{
-					Entity = GetNewSingleEntity(GameState);
-					Entity->Color = COLOR_BLACK;
-					Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
-					Entity->ColliderWidth = cellSize + 1;
-					Entity->Alive = true;
-					Entity->Type = ENTITY_TYPE_WALL;
-				}
+		// active_entity *Entity;
+		// uint16 cellSize = 150;
+		// const uint16 GridWidth = 15;
+		// const uint16 GridHeight = 10;
+		// uint16 levelGrid[GridHeight][GridWidth] =
+		// {
+		// 	{0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+		// 	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		// 	{0, 2, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 2, 0, 1},
+		// 	{0, 0, 1, 1, 0, 0, 2, 1, 0, 0, 1, 0, 2, 2, 1},
+		// 	{0, 0, 0, 1, 1, 0, 0, 1, 0, 2, 1, 0, 2, 0, 1},
+		// 	{0, 2, 0, 2, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1},
+		// 	{1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 2, 1, 0, 1},
+		// 	{1, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 1, 0, 2, 1},
+		// 	{1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1},
+		// 	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+		// };
+		// for (uint16 x = 0; x < GridWidth; x++)
+		// {
+		// 	for (uint16 y = 0; y < GridHeight; y++)
+		// 	{
+		// 		if (levelGrid[y][x] == 1)
+		// 		{
+		// 			Entity = GetNewSingleEntity(GameState);
+		// 			Entity->Color = COLOR_BLACK;
+		// 			Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
+		// 			Entity->ColliderWidth = cellSize + 1;
+		// 			Entity->Alive = true;
+		// 			Entity->Type = ENTITY_TYPE_WALL;
+		// 		}
 
-				if (levelGrid[y][x] == 2)
-				{
-					Entity = GetNewSingleEntity(GameState);
-					Entity->Color = COLOR_GREEN;
-					Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
-					Entity->ColliderWidth = (uint16)RandomRangeInt(10, 50, GameState);
-					Entity->Alive = true;
-					Entity->Type = ENTITY_TYPE_ENEMY;
-				}
-			}
-		}
+		// 		if (levelGrid[y][x] == 2)
+		// 		{
+		// 			Entity = GetNewSingleEntity(GameState);
+		// 			Entity->Color = COLOR_GREEN;
+		// 			Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
+		// 			Entity->ColliderWidth = (uint16)RandomRangeInt(10, 50, GameState);
+		// 			Entity->Alive = true;
+		// 			Entity->Type = ENTITY_TYPE_ENEMY;
+		// 		}
+		// 	}
+		// }
 
 		GameState->AlphabetBitmapsCount = 0;
 		MakeAlphabetBitmaps(GameState, PlatformReadFile);
@@ -473,8 +489,7 @@ extern "C" GAME_LOOP(GameLoop)
 			PushRenderSquare(GameState, MakeSquare(EntityAbout->Position - WorldCenter, EntityAbout->ColliderWidth, EntityAbout->Color));
 		}
 	}
-	FontRenderWord("W", vector2{500, 500}, 1.0f, GameState);
-
+	FontRenderWord("typography", vector2{500, 500}, 0.5f, GameState);
 }
 
 
