@@ -1,0 +1,759 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"measur",
+				"measurementUsing"
+			],
+			[
+				"FontRender",
+				"FontRenderWord"
+			],
+			[
+				"converted",
+				"ConvertedBitmap"
+			],
+			[
+				"bitm",
+				"Bitmap"
+			],
+			[
+				"respawnTime",
+				"respawnTimeLeft"
+			],
+			[
+				"current",
+				"currentHealth"
+			],
+			[
+				"damage",
+				"damageAmount"
+			],
+			[
+				"pistolTexture",
+				"pistolShotTextureTwo"
+			],
+			[
+				"pisto",
+				"pistolShotTextureOne"
+			],
+			[
+				"obj",
+				"objChecking"
+			],
+			[
+				"game",
+				"GameState"
+			],
+			[
+				"WorldEntity",
+				"WorldEntityCount"
+			],
+			[
+				"Is",
+				"IsDashing"
+			],
+			[
+				"weap",
+				"weaponIndex"
+			],
+			[
+				"message",
+				"messageStrings"
+			],
+			[
+				"pla",
+				"playerCode"
+			],
+			[
+				"real",
+				"readfile	Read File Into Vector"
+			],
+			[
+				"vector",
+				"vector2"
+			],
+			[
+				"vec",
+				"vector2"
+			],
+			[
+				"missil",
+				"missileController"
+			],
+			[
+				"StartCo",
+				"StartCoroutine"
+			],
+			[
+				"Playable",
+				"PlayableUnitStats"
+			],
+			[
+				"new",
+				"newHealth"
+			],
+			[
+				"healthA",
+				"healthAddition"
+			],
+			[
+				"doorHit",
+				"doorHitUp"
+			],
+			[
+				"objec",
+				"objectsChecking"
+			],
+			[
+				"bullets",
+				"bulletsMoved"
+			],
+			[
+				"bulletsIn",
+				"bulletsInClip"
+			],
+			[
+				"ve",
+				"Vector3"
+			],
+			[
+				"Act",
+				"ActivationStart"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "code/Font.h",
+			"settings":
+			{
+				"buffer_size": 113,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "code/Dash.h",
+			"settings":
+			{
+				"buffer_size": 5056,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "code/Dash.cpp",
+			"settings":
+			{
+				"buffer_size": 14897,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "code/Font.cpp",
+			"settings":
+			{
+				"buffer_size": 3831,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "code/stb_truetype.h",
+			"settings":
+			{
+				"buffer_size": 126535,
+				"line_ending": "Windows"
+			}
+		}
+	],
+	"build_system": "Packages/User/OriginTowerBuild.sublime-build",
+	"command_palette":
+	{
+		"height": 400.0,
+		"selected_items":
+		[
+			[
+				"settings",
+				"Preferences: Package Control Settings – User"
+			],
+			[
+				"linter",
+				"Preferences: SublimeLinter Settings – User"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"linter set",
+				"Preferences: SublimeLinter Settings – Default"
+			],
+			[
+				"linter settin",
+				"Preferences: SublimeLinter Settings – User"
+			],
+			[
+				"key",
+				"Preferences: Key Bindings - User"
+			]
+		],
+		"width": 424.0
+	},
+	"console":
+	{
+		"height": 126.0,
+		"history":
+		[
+			"import urllib.request,os,hashlib; h = 'eb2297e1a458f27d836c04bb0cbaf282' + 'd0e7a3098092775ccb37ca9d6b2e4b7d'; pf = 'Package Control.sublime-package'; ipp = sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); by = urllib.request.urlopen( 'http://packagecontrol.io/' + pf.replace(' ', '%20')).read(); dh = hashlib.sha256(by).hexdigest(); print('Error validating download (got %s instead of %s), please try manual install' % (dh, h)) if dh != h else open(os.path.join( ipp, pf), 'wb' ).write(by)"
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/G/Digital Archive/Game Development/Arcade Dash/TowerEngine/code/win32_Dash.cpp",
+		"/T/TowerEngine/OriginTower.cpp",
+		"/G/Digital Archive/Game Development/Arcade Dash/TowerEngine/code/Font.h",
+		"/G/Digital Archive/Game Development/Arcade Dash/TowerEngine/code/Dash.h",
+		"/G/Digital Archive/Game Development/Arcade Dash/TowerEngine/code/Dash.cpp",
+		"/G/Digital Archive/Game Development/Arcade Dash/TowerEngine/code/Font.cpp",
+		"/T/TowerEngine/SublimeWorkspace.sublime-workspace",
+		"/C/Users/perma/AppData/Roaming/Sublime Text 3/Packages/User/OriginTowerBuild.sublime-build",
+		"/C/Users/perma/workspace/SortSearch/src/edu/wou/cs260/SortSearch.java",
+		"/C/Users/perma/workspace/SortSearch/src/edu/wou/cs260/  required",
+		"/C/Users/perma/AppData/Roaming/Sublime Text 3/Packages/SublimeAStyleFormatter/SublimeAStyleFormatter.sublime-settings",
+		"/C/Users/perma/AppData/Roaming/Sublime Text 3/Packages/User/Package Control.sublime-settings",
+		"/C/Users/perma/AppData/Roaming/Sublime Text 3/Packages/SublimeAStyleFormatter/options_default.json",
+		"/C/Users/perma/AppData/Roaming/Sublime Text 3/Packages/SublimeAStyleFormatter/src/win_build_all.bat",
+		"/G/Digital Archive/Game Development/Arcade Dash/TowerEngine/code/String.cpp",
+		"/G/Digital Archive/Game Development/Arcade Dash/TowerEngine/DashGameNotes.todo",
+		"/G/Digital Archive/Game Development/Arcade Dash/TowerEngine/code/Math.cpp",
+		"/G/Digital Archive/Game Development/Arcade Dash/TowerEngine/code/vector2.h",
+		"/G/Digital Archive/Game Development/Arcade Dash/TowerEngine/code/vector2.cpp",
+		"/g/digital archive/game development/arcade dash/towerengine/code/font.h",
+		"/g/digital archive/game development/arcade dash/towerengine/code/color.cpp",
+		"/g/digital archive/game development/arcade dash/towerengine/code/vector2.cpp",
+		"/G/Digital Archive/Game Development/Arcade Dash/TowerEngine/code/math.cpp",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/GameUI/UIManager.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/Player/PlayerServerCode.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/GunloadTodo.todo",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/Player/LocalPlayerCode.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/GameNetworkController.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/StandaloneConsole.cs",
+		"/t/towerengine/code/math.cpp",
+		"/T/TowerEngine/code/Font.cpp",
+		"/G/Digital Archive/Game Development/ContractWork/Warwick - MOBA Starter Kit and MechMoba/MOBA Starter Kit/MOBA Starter Kit/Assets/Scripts/PlayableUnit Architecture/Ability.cs",
+		"/T/TowerEngine/code/vector2.cpp",
+		"/T/TowerEngine/code/Dash.cpp",
+		"/T/TowerEngine/code/Dash.h",
+		"/T/TowerEngine/code/Vector2.h",
+		"/T/TowerEngine/code/Color.cpp",
+		"/T/TowerEngine/code/Font.ccp",
+		"/C/Users/perma/Desktop/gunload_Data/output_log.txt",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/Console.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/GameUI/NetworkUIManager.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/GameUI/UIManagerServer.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Warwick - MOBA Starter Kit and MechMoba/MOBA Starter Kit/MOBA Starter Kit/Assets/Scripts/PlayableUnit Architecture/Targeting/Targeting.cs",
+		"/G/Digital Archive/Game Development/Arcade Dash/TowerEngine/code/stb_truetype.h",
+		"/G/Digital Archive/Game Development/Arcade Dash/TowerEngine/OriginTower.h",
+		"/G/Digital Archive/Game Development/Arcade Dash/TowerEngine/OriginTower.cpp",
+		"/C/Users/perma/AppData/Roaming/Sublime Text 3/Packages/User/SublimeLinter.sublime-settings",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/Level Features/DoorController.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/GlobalVars.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/Gun/Weapon/Weapon.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/Level Features/ExplosiveBarrel.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/Gun/Gun.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/Pickups/ArmorPickup.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/Pickups/HealthPickup.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/Elevator.cs",
+		"/G/Digital Archive/Game Development/Arcade Dash/TowerEngine/OpenVS.bat",
+		"/G/Digital Archive/Game Development/ContractWork/Warwick - MOBA Starter Kit and MechMoba/MOBA Starter Kit/MOBA Starter Kit/Assets/moba todo.todo",
+		"/G/Digital Archive/Game Development/ContractWork/Kyle Garner - DashAttack/dashpolish.todo",
+		"/G/Digital Archive/Game Development/ContractWork/Warwick - MOBA Starter Kit and MechMoba/MOBA Starter Kit/MOBA Starter Kit/Assets/Scripts/PlayableUnit Architecture/UnitComponent.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/Gun/Weapon/Pistol.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/Gun/Weapon/Smg.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/Pickups/AmmoPickup.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Editor/PostBuild.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/Doom Billboards/DoomBillboard.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/Level Features/SpawnPoint.cs",
+		"/T/TowerEngine/code/build.bat",
+		"/T/TowerEngine/code/win32_Dash.cpp",
+		"/T/TowerEngine/OpenVS.bat",
+		"/C/Users/perma/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup/subst.bat",
+		"/G/Digital Archive/Game Development/Arcade Dash/TowerEngine/code/build.bat",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/Level Features/TeleporterController.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/GameUI/ChatInput.cs",
+		"/G/Digital Archive/Game Development/Origin Tower/TowerEngine/code/win32_origintower.cpp",
+		"/G/Digital Archive/Game Development/Arcade Dash/TowerEngine/code/Color.h",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/Gun/BulletHolePool.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/Gun/Weapon.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/CameraController.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Warwick - MOBA Starter Kit and MechMoba/MOBA Starter Kit/MOBA Starter Kit/Assets/Scripts/PlayableUnit Architecture/Deployment/DeploymentInstant.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Warwick - MOBA Starter Kit and MechMoba/MOBA Starter Kit/MOBA Starter Kit/Assets/Scripts/PlayableUnit Architecture/Deployment/DeploymentMissile.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Warwick - MOBA Starter Kit and MechMoba/MOBA Starter Kit/MOBA Starter Kit/Assets/Scripts/PlayableUnit Architecture/Propagation/Propagation.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Warwick - MOBA Starter Kit and MechMoba/MOBA Starter Kit/MOBA Starter Kit/Assets/Scripts/PlayableUnit Architecture/Targeting/TargetingGroundCircle.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Warwick - MOBA Starter Kit and MechMoba/MOBA Starter Kit/MOBA Starter Kit/Assets/Scripts/PlayableUnit Architecture/Propagation/PropagationChain.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Warwick - MOBA Starter Kit and MechMoba/MOBA Starter Kit/MOBA Starter Kit/Assets/Scripts/PlayableUnit Architecture/Activation/ActivationButtonPreview.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/GameUI/Messager.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/GameUI/Messager/Message.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/GameUI/Messager/Messager.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/Scoreboard/ScoreboardLine.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/Scoreboard/Scoreboard.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/UIManager.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/Scoreboard.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Wierzbicki - Gunload Deathmatch/GunloadDeathmatch/Assets/Scripts/SpawnController.cs",
+		"/C/Users/perma/AppData/Roaming/Sublime Text 3/Packages/SublimeLinter/SublimeLinter.sublime-settings",
+		"/G/Digital Archive/Game Development/Arcade Dash/TowerEngine/code/win32_OriginTower.cpp",
+		"/G/Digital Archive/Game Development/Arcade Dash/TowerEngine/code/win32_origintower.cpp",
+		"/C/Users/perma/Desktop/OriginTower.cpp",
+		"/C/Users/perma/Desktop/OriginTower.h",
+		"/G/Digital Archive/Game Development/Arcade Dash/TowerEngine/code/OriginTower.cpp",
+		"/G/Digital Archive/Game Development/Arcade Dash/TowerEngine/code/win32_tower.cpp",
+		"/C/Users/perma/Desktop/cpp-eb02ec0ef6f5bf66eeaaffb27c5b71c8163bdce2/code/win32_handmade.cpp",
+		"/C/Users/perma/Desktop/cpp-eb02ec0ef6f5bf66eeaaffb27c5b71c8163bdce2/code/handmade.cpp",
+		"/C/Users/perma/Desktop/cpp-eb02ec0ef6f5bf66eeaaffb27c5b71c8163bdce2/code/handmade.h",
+		"/C/Users/perma/Desktop/cpp-eb02ec0ef6f5bf66eeaaffb27c5b71c8163bdce2/code/handmade_asset.cpp",
+		"/C/Users/perma/Desktop/cpp-eb02ec0ef6f5bf66eeaaffb27c5b71c8163bdce2/code/handmade_random.h",
+		"/C/Users/perma/Desktop/cpp-95a12d1dff134bd834f3b8d379961c37030a562d/code/handmade.h",
+		"/C/Users/perma/Desktop/cpp-95a12d1dff134bd834f3b8d379961c37030a562d/day.txt",
+		"/C/Users/perma/Desktop/cpp-master/code/handmade.h",
+		"/C/Users/perma/Desktop/cpp-master/code/handmade_platform.h",
+		"/C/Users/perma/Desktop/cpp-master/code/handmade_asset.h",
+		"/C/Users/perma/Desktop/cpp-master/code/handmade_asset.cpp",
+		"/C/Users/perma/Desktop/cpp-master/code/static_check.bat",
+		"/C/Users/perma/Desktop/cpp-master/code/todo_check.bat",
+		"/C/Users/perma/Desktop/cpp-master/code/handmade_audio.cpp",
+		"/C/Users/perma/Desktop/cpp-master/code/handmade_audio.h",
+		"/C/Users/perma/Desktop/cpp-master/readme.txt",
+		"/C/Users/perma/Desktop/cpp-master/day.txt",
+		"/G/Digital Archive/Game Development/Origin Tower/TowerEngine/code/build.bat",
+		"/G/Digital Archive/Game Development/Arcade Dash/TowerEngine/OriginTower.todo",
+		"/G/Digital Archive/Game Development/Origin Tower/Game/Assets/Scripts/Player/PlayerController.cs",
+		"/g/digital archive/game development/origin tower/towerengine/code/win32_origintower.cpp",
+		"/G/Digital Archive/Game Development/Origin Tower/TowerEngine/code/OriginTower.cpp",
+		"/G/Digital Archive/Game Development/Origin Tower/TowerEngine/OriginTower.todo",
+		"/G/Digital Archive/Game Development/Origin Tower/Game/Assets/Scripts/Enemy/Enemy Behavior/Fly.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Warwick - MOBA Starter Kit and MechMoba/MOBA Starter Kit/MOBA Starter Kit/Assets/Scripts/MissileController.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Warwick - MOBA Starter Kit and MechMoba/MOBA Starter Kit/MOBA Starter Kit/Assets/Scripts/PlayableUnit Architecture/Deployment/Deployment.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Warwick - MOBA Starter Kit and MechMoba/MOBA Starter Kit/MOBA Starter Kit/Assets/From Asset Store/Bearded Man Studios Inc/Forge Networking/MainScripts/Default/UnityHandle.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Warwick - MOBA Starter Kit and MechMoba/MOBA Starter Kit/MOBA Starter Kit/Assets/Scripts/MisileController.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Warwick - MOBA Starter Kit and MechMoba/MOBA Starter Kit/MOBA Starter Kit/Assets/Scripts/PlayableUnit Architecture/CooldownTimer/CooldownTimer.cs",
+		"/G/Digital Archive/Game Development/ContractWork/Warwick - MOBA Starter Kit and MechMoba/MOBA Starter Kit/MOBA Starter Kit/Assets/Scripts/PlayableUnit Architecture/CooldownTimer/CooldownOnEnd.cs"
+	],
+	"find":
+	{
+		"height": 38.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"FontRenderSize",
+			"stbtt_GetCodepointKernAdvance",
+			"Kern",
+			"kerning",
+			"stbtt_ScaleForPixelHeight",
+			"baseline",
+			"VMetrics",
+			"stbtt_GetFontVMetrics",
+			"base",
+			"FontUtility",
+			"MakeBitmapCodepoint",
+			"selectionSort",
+			"124",
+			"System.out.println",
+			"ProcessGLKeyboardInput",
+			"LetterBitmap",
+			"Font",
+			"Font.cpp",
+			"Font",
+			"respawn",
+			"KillPlayer",
+			"canKill",
+			"CmdSetDoorHit",
+			"KillPlayer",
+			"CmdSpawnPlayer",
+			"SpawnPlayer",
+			"spawn",
+			"SpawnPlayer",
+			"PlatformReadFile",
+			"font_bitmap_letter",
+			"done with this",
+			"PushRenderTexture",
+			"stbtt_GetCodepointBitmap",
+			"stbtt_GetCodepointBitmap()",
+			"stbtt_GetCodepointBitmap()  ",
+			"stbtt_GetCodepointBitmap",
+			"DisableGunLightWait",
+			"CmdSpawnPlayer",
+			"spawn",
+			"healthBar",
+			"stbtt_InitFont",
+			"readfile",
+			"PlatformReadFile",
+			"canShoot",
+			"ShootCooldown",
+			"gunCooldownSeconds",
+			"playerCode",
+			"LoadState",
+			"CheckSaveState",
+			"ConcatCharArrays",
+			"ConcatIntChar",
+			"PlatformSaveState",
+			"PLATFORM_SAVE_STATE",
+			"LoadState",
+			"PlatformSaveState",
+			"SaveSate",
+			"SaveState",
+			"platform",
+			"PlatformReadFile",
+			"game_memory",
+			"ElapsedFrameCount",
+			"PLATFORM_READ_FILE",
+			"CheckSaveState",
+			"GameState->CamCenter",
+			"GameState->WorldCenter",
+			"PlayerCamDifference",
+			"RandomGenState",
+			"RandomRangeInt",
+			"SpeedCoeficient",
+			"IsColliding",
+			"GetNewEnemy",
+			"active_entity",
+			"GetNewEnemy",
+			"grab",
+			"chatInput",
+			"animator",
+			"MovementSpeed",
+			"MakeSquare",
+			"AddWorldEntity",
+			"TimeRate",
+			"EntityAbout",
+			"ForceOn",
+			"maxHealth",
+			"game_input",
+			"OriginTower",
+			"concat",
+			"game_input",
+			"input",
+			"MakeSquare",
+			"gl_square",
+			"ConcatCharArrays",
+			"OriginTower.dll",
+			"\\",
+			"gl_texture",
+			"Win32AddEntry",
+			"ReadFile",
+			"ReadDataFromFile",
+			"PushArray",
+			"PlatformReadFile",
+			"GLLoadBMP",
+			"LoadBitmap",
+			"game_state",
+			"RandomSeed",
+			"memory_index",
+			"PushStruct",
+			"HOTween",
+			"virtualalloc",
+			"CameraSensitivity",
+			"Spawn",
+			"DisableGunLightWait",
+			"doorHit",
+			"CmdSetDoorHitUp",
+			"CmdSetDoorHit",
+			"SpaceManager",
+			"skillButtonIcon",
+			"dashVerticality",
+			"vfx",
+			"obstacles",
+			"anim",
+			"impactScreenShake",
+			"knockBackDamageAreaOfEffectRadius",
+			"avoidBackDashing",
+			"autochargeMaximumEnemyDistance",
+			"maximumTargetDestinationDistance",
+			"speed",
+			"torsoRotationSpeed",
+			"Debug.Log",
+			"dashingDestination"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			"GlobalFontRenderSize",
+			"MapGlToGameInput",
+			"Bitmap",
+			"Player",
+			"skillsOrdered",
+			"gun"
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 2,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "code/Font.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 113,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								85,
+								99
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "code/Dash.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 5056,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3606,
+								3606
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 1911.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "code/Dash.cpp",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 14897,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								14707,
+								14710
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 4774.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "code/Font.cpp",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3831,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3252,
+								3252
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 141.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "code/stb_truetype.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 126535,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								31346,
+								31370
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"tab_size": 3,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 8593.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 38.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.astyle_error_message":
+	{
+		"height": 0.0
+	},
+	"output.exec":
+	{
+		"height": 137.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"project": "ArcadeDashProject.sublime-project",
+	"replace":
+	{
+		"height": 72.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 500.0,
+		"selected_items":
+		[
+			[
+				"",
+				"G:\\Digital Archive\\Game Development\\Arcade Dash\\TowerEngine\\ArcadeDashProject.sublime-project"
+			]
+		],
+		"width": 380.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 150.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

@@ -5,12 +5,8 @@
 struct font_codepoint
 {
 	loaded_image Bitmap;
+	int32 BaselineFactor;
 };
 
-struct font_utility
-{
-	uint32 LetterConverterCount;
-	char Letters[100];
-};
 
 #endif

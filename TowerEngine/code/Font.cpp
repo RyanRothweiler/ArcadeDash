@@ -5,60 +5,29 @@
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "stb_truetype.h"
 
-void
-PushLetter(char Letter, game_state *GameState)
-{
-	GameState->FontUtility.Letters[GameState->FontUtility.LetterConverterCount] = Letter;
-	GameState->FontUtility.LetterConverterCount++;
-}
-
-void
-InitializeAlphabetVars(game_state *GameState)
-{
-	GameState->FontUtility.LetterConverterCount = 0;
-	PushLetter('A', GameState);
-	PushLetter('B', GameState);
-	PushLetter('C', GameState);
-	PushLetter('D', GameState);
-	PushLetter('E', GameState);
-	PushLetter('F', GameState);
-	PushLetter('G', GameState);
-	PushLetter('H', GameState);
-	PushLetter('I', GameState);
-	PushLetter('J', GameState);
-	PushLetter('K', GameState);
-	PushLetter('L', GameState);
-	PushLetter('M', GameState);
-	PushLetter('N', GameState);
-	PushLetter('O', GameState);
-	PushLetter('P', GameState);
-	PushLetter('Q', GameState);
-	PushLetter('R', GameState);
-	PushLetter('S', GameState);
-	PushLetter('T', GameState);
-	PushLetter('U', GameState);
-	PushLetter('V', GameState);
-	PushLetter('W', GameState);
-	PushLetter('X', GameState);
-	PushLetter('Y', GameState);
-	PushLetter('Z', GameState);
-}
+//NOTE Not entirely sure what this does...
+global_variable real64 GlobalFontRenderSize = 200.0f;
+global_variable stbtt_fontinfo GlobalCurrentFontInfo;
 
 void
 MakeBitmapCodepoint(char Letter, platform_read_file *ReadFile, game_state *GameState)
 {
-	//TODO add away to get fonts. Try to load one but default to ariel if can't find a font we want.
-	read_file_result FontFile = PlatformReadFile("C:/Windows/Fonts/arial.ttf");
+	read_file_result FontFile = PlatformReadFile("../Assets/Gotham-Medium.ttf");
 	Assert(FontFile.Contents > 0);
 
-	stbtt_fontinfo FontInfo;
+	// stbtt_fontinfo FontInfo;
 	int Width, Height, XOffset, YOffset;
-	stbtt_InitFont(&FontInfo, (uint8 *)FontFile.Contents, stbtt_GetFontOffsetForIndex((uint8 *)FontFile.Contents, 0));
-	uint8 *MonoBitmap = stbtt_GetCodepointBitmap(&FontInfo, 0, stbtt_ScaleForPixelHeight(&FontInfo, 128.0f),
+	stbtt_InitFont(&GlobalCurrentFontInfo, (uint8 *)FontFile.Contents, stbtt_GetFontOffsetForIndex((uint8 *)FontFile.Contents, 0));
+	uint8 *MonoBitmap = stbtt_GetCodepointBitmap(&GlobalCurrentFontInfo, 0, stbtt_ScaleForPixelHeight(&GlobalCurrentFontInfo, (float)GlobalFontRenderSize),
 	                    Letter, &Width, &Height, &XOffset, &YOffset);
+
 
 	font_codepoint *NextCodepoint = &GameState->AlphabetBitmaps[GameState->AlphabetBitmapsCount];
 	GameState->AlphabetBitmapsCount++;
+
+	int Ascent, Descent, LineGap;
+	stbtt_GetFontVMetrics(&GlobalCurrentFontInfo, &Ascent, &Descent, &LineGap);
+	NextCodepoint->BaselineFactor = YOffset;
 
 	NextCodepoint->Bitmap.Width = Width;
 	NextCodepoint->Bitmap.Height = Height;
@@ -110,54 +79,42 @@ MakeBitmapCodepoint(char Letter, platform_read_file *ReadFile, game_state *GameS
 void
 MakeAlphabetBitmaps(game_state *GameState, platform_read_file *ReadFileFunction)
 {
-	for (uint32 LetterIndex = 0;
-	     LetterIndex < GameState->FontUtility.LetterConverterCount;
-	     LetterIndex++)
+	for (uint32 Letter = 0;
+	     Letter <= 127;
+	     Letter++)
 	{
-		MakeBitmapCodepoint(GameState->FontUtility.Letters[LetterIndex], ReadFileFunction, GameState);
+		MakeBitmapCodepoint((char)Letter, ReadFileFunction, GameState);
 	}
-}
-
-uint32
-LetterToIndex(char Letter, game_state *GameState)
-{
-	for (uint32 Index = 0;
-	     Index < GameState->FontUtility.LetterConverterCount;
-	     Index++)
-	{
-		if (GameState->FontUtility.Letters[Index] == Letter)
-		{
-			return (Index);
-		}
-	}
-
-	Assert(0);
-	return (0);
 }
 
 void
-FontRenderLetter(char Letter, vector2 TopLeft, game_state *GameState)
+FontRenderLetter(char Letter, vector2 TopLeft, real64 Size, game_state *GameState)
 {
-	gl_texture Texture = {};
+	font_codepoint *CodepointUsing = &GameState->AlphabetBitmaps[(uint32)Letter];
 
-	Texture.Image = &GameState->AlphabetBitmaps[LetterToIndex(Letter, GameState)].Bitmap;
-	Texture.Center = TopLeft;
-	Texture.Scale = vector2{(real64)GameState->AlphabetBitmaps[LetterToIndex(Letter, GameState)].Bitmap.Width,
-	                        (real64)GameState->AlphabetBitmaps[LetterToIndex(Letter, GameState)].Bitmap.Height};
+	gl_texture Texture = {};
+	Texture.Image = &CodepointUsing->Bitmap;
+	Texture.Center = (TopLeft + vector2{0, (real64)CodepointUsing->BaselineFactor});
+	Texture.Scale = vector2{(real64)CodepointUsing->Bitmap.Width, (real64)(CodepointUsing->Bitmap.Height)} * 0.5f;
 
 	PushRenderTexture(GameState, &Texture);
 }
 
 void
-FontRenderWord(char *Word, vector2 TopLeft, game_state *GameState)
+FontRenderWord(char *Word, vector2 TopLeft, real64 Size, game_state *GameState)
 {
-	// uint32 WordLenght = (uint32)CharArrayLength(Word);
+	vector2 PosAt = TopLeft;
+	// real64 FunctionalSize = ((GlobalFontRenderSize * 0.01f) / GlobalFontRenderSize) * Size;
+
 	for (uint32 LetterIndex = 0;
 	     LetterIndex < (uint32)CharArrayLength(Word);
 	     LetterIndex++)
 	{
 		char *Letter = &Word[LetterIndex];
-		FontRenderLetter(*Letter, vector2{LetterIndex * 150.0f, 0} + TopLeft, GameState);
+		FontRenderLetter(*Letter, PosAt,  Size, GameState);
+
+		PosAt.X += GameState->AlphabetBitmaps[(uint32)Word[LetterIndex]].Bitmap.Width;
+		// PosAt.X += (100 * LetterIndex;
 	}
 }
 

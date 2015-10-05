@@ -12,6 +12,7 @@
 #include <dsound.h>
 
 #define internal static
+#define global_variable static
 
 #define Kilobytes(value) ((value) * 1024)
 #define Megabytes(value) (Kilobytes(value) * 1024)
@@ -225,7 +226,7 @@ struct game_state
 
 	//TODO pull these two variables, (the list size and arrays) out into a list structure
 	uint32 RenderTexturesCount;
-	gl_texture RenderTextures[300];
+	gl_texture RenderTextures[500];
 	uint32 RenderSquaresCount;
 	gl_square RenderSquares[300];
 	uint32 RenderLinesCount;
@@ -242,7 +243,6 @@ struct game_state
 	char *DebugOutput = "";
 
 
-	font_utility FontUtility;
 	uint32 AlphabetBitmapsCount;
 	font_codepoint AlphabetBitmaps[200];
 };

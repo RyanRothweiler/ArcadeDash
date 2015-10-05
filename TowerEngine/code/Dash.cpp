@@ -1,8 +1,8 @@
 #include "Dash.h"
 
-static platform_read_file *PlatformReadFile;
-static platform_save_state *PlatformSaveState;
-static platform_load_state *PlatformLoadState;
+global_variable platform_read_file *PlatformReadFile;
+global_variable platform_save_state *PlatformSaveState;
+global_variable platform_load_state *PlatformLoadState;
 
 void
 PushRenderTexture(game_state *GameState, gl_texture *Texture)
@@ -185,50 +185,49 @@ extern "C" GAME_LOOP(GameLoop)
 		// 1 - Wall
 		// 2 - Enemy
 
-		// active_entity *Entity;
-		// uint16 cellSize = 150;
-		// const uint16 GridWidth = 15;
-		// const uint16 GridHeight = 10;
-		// uint16 levelGrid[GridHeight][GridWidth] =
-		// {
-		// 	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-		// 	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-		// 	{1, 2, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 2, 0, 1},
-		// 	{1, 0, 1, 1, 0, 0, 2, 1, 0, 0, 1, 0, 2, 2, 1},
-		// 	{1, 0, 0, 1, 1, 0, 0, 1, 0, 2, 1, 0, 2, 0, 1},
-		// 	{1, 2, 0, 2, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1},
-		// 	{1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 2, 1, 0, 1},
-		// 	{1, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 1, 0, 2, 1},
-		// 	{1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1},
-		// 	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-		// };
-		// for (uint16 x = 0; x < GridWidth; x++)
-		// {
-		// 	for (uint16 y = 0; y < GridHeight; y++)
-		// 	{
-		// 		if (levelGrid[y][x] == 1)
-		// 		{
-		// 			Entity = GetNewSingleEntity(GameState);
-		// 			Entity->Color = COLOR_BLACK;
-		// 			Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
-		// 			Entity->ColliderWidth = cellSize + 1;
-		// 			Entity->Alive = true;
-		// 			Entity->Type = ENTITY_TYPE_WALL;
-		// 		}
+		active_entity *Entity;
+		uint16 cellSize = 150;
+		const uint16 GridWidth = 15;
+		const uint16 GridHeight = 10;
+		uint16 levelGrid[GridHeight][GridWidth] =
+		{
+			{0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+			{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+			{0, 2, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 2, 0, 1},
+			{0, 0, 1, 1, 0, 0, 2, 1, 0, 0, 1, 0, 2, 2, 1},
+			{0, 0, 0, 1, 1, 0, 0, 1, 0, 2, 1, 0, 2, 0, 1},
+			{0, 2, 0, 2, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1},
+			{1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 2, 1, 0, 1},
+			{1, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 1, 0, 2, 1},
+			{1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1},
+			{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+		};
+		for (uint16 x = 0; x < GridWidth; x++)
+		{
+			for (uint16 y = 0; y < GridHeight; y++)
+			{
+				if (levelGrid[y][x] == 1)
+				{
+					Entity = GetNewSingleEntity(GameState);
+					Entity->Color = COLOR_BLACK;
+					Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
+					Entity->ColliderWidth = cellSize + 1;
+					Entity->Alive = true;
+					Entity->Type = ENTITY_TYPE_WALL;
+				}
 
-		// 		if (levelGrid[y][x] == 2)
-		// 		{
-		// 			Entity = GetNewSingleEntity(GameState);
-		// 			Entity->Color = COLOR_GREEN;
-		// 			Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
-		// 			Entity->ColliderWidth = (uint16)RandomRangeInt(10, 50, GameState);
-		// 			Entity->Alive = true;
-		// 			Entity->Type = ENTITY_TYPE_ENEMY;
-		// 		}
-		// 	}
-		// }
+				if (levelGrid[y][x] == 2)
+				{
+					Entity = GetNewSingleEntity(GameState);
+					Entity->Color = COLOR_GREEN;
+					Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
+					Entity->ColliderWidth = (uint16)RandomRangeInt(10, 50, GameState);
+					Entity->Alive = true;
+					Entity->Type = ENTITY_TYPE_ENEMY;
+				}
+			}
+		}
 
-		InitializeAlphabetVars(GameState);
 		GameState->AlphabetBitmapsCount = 0;
 		MakeAlphabetBitmaps(GameState, PlatformReadFile);
 
@@ -367,8 +366,6 @@ extern "C" GAME_LOOP(GameLoop)
 	GameState->WorldCenter = GameState->WorldCenter + (PlayerCamDifference * 0.08f * GameState->TimeRate);
 	vector2 WorldCenter = GameState->WorldCenter - GameState->CamCenter;
 
-	FontRenderWord("PENIS", vector2{0, 0} - WorldCenter, GameState);
-	// FontRenderLetter('G', vector2{0, 0} - WorldCenter, GameState);
 
 	for (int EntityIndex = 0;
 	     EntityIndex < GameState->WorldEntityCount;
@@ -476,6 +473,8 @@ extern "C" GAME_LOOP(GameLoop)
 			PushRenderSquare(GameState, MakeSquare(EntityAbout->Position - WorldCenter, EntityAbout->ColliderWidth, EntityAbout->Color));
 		}
 	}
+	FontRenderWord("W", vector2{500, 500}, 1.0f, GameState);
+
 }
 
 
