@@ -489,7 +489,13 @@ extern "C" GAME_LOOP(GameLoop)
 			PushRenderSquare(GameState, MakeSquare(EntityAbout->Position - WorldCenter, EntityAbout->ColliderWidth, EntityAbout->Color));
 		}
 	}
-	FontRenderWord("typography", vector2{500, 500}, 0.5f, GameState);
+	// PushRenderSquare(GameState, MakeSquare(vector2{10, 10}, 10, color{1.0, 1.0, 1.0, 1.0}));
+	// PushRenderSquare(GameState, MakeSquare(vector2{10, 500}, 10, color{1.0, 1.0, 1.0, 1.0}));
+	// FontRenderLetter('A', vector2{10, 10}, 1.0f, GameState);
+	FontRenderWord("Cloud Typography: HEY!", vector2{10, 10} - WorldCenter, 1.0f, GameState);
+	FontRenderWord("Cloud Typography: HEY!", vector2{10, 500} - WorldCenter, 0.5f, GameState);
+	// FontRenderWord("tester", vector2{10, 500}, 1.0f, GameState);
+	// FontRenderWord("Every connected gift spits the irrespective sweat", vector2{0, 0}, 1.0f, GameState);
 }
 
 

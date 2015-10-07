@@ -9,11 +9,18 @@
 // 1 - Most TopLeft variables are not actually top left, they're bottom middle.
 // 2 - I had to half the final rendering size since the bitmap rendering is janky.
 
+//NOTE there are some problems with vertical spacing that I had to manually fix... that sucks.
+
 //NOTE Not entirely sure what this does...
 global_variable real64 GlobalFontRenderSize = 200.0f;
+
+//NOTE I don't think I need this anymore.
 global_variable stbtt_fontinfo GlobalCurrentFontInfo;
+
 //TODO create a debug build path, so this stuff doesn't compile in the final version.
-global_variable bool32 ShowDebugInfo = true;
+global_variable bool32 ShowDebugInfo = false;
+
+int32 FontHeight;
 
 void
 MakeBitmapCodepoint(char Letter, platform_read_file *ReadFile, game_state *GameState)
@@ -26,17 +33,10 @@ MakeBitmapCodepoint(char Letter, platform_read_file *ReadFile, game_state *GameS
 	uint8 *MonoBitmap = stbtt_GetCodepointBitmap(&GlobalCurrentFontInfo, 0, stbtt_ScaleForPixelHeight(&GlobalCurrentFontInfo, (float)GlobalFontRenderSize),
 	                    Letter, &Width, &Height, &XOffset, &YOffset);
 
-
 	font_codepoint *NextCodepoint = &GameState->AlphabetBitmaps[GameState->AlphabetBitmapsCount];
 	GameState->AlphabetBitmapsCount++;
 
-	// int Ascent, Descent, LineGap;
-	// stbtt_GetGlyphVMetrics(&GlobalCurrentFontInfo, &Ascent, &Descent, &LineGap);
-	NextCodepoint->BaselineFactor = (YOffset + Height) * 2;
-
-	//m - 122
-	//n - 
-
+	NextCodepoint->BaselineFactor = YOffset;
 	NextCodepoint->Bitmap.Width = Width;
 	NextCodepoint->Bitmap.Height = Height;
 	NextCodepoint->Bitmap.GLTexture = (GLuint)VirtualAlloc(0, sizeof(*MonoBitmap), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
@@ -104,12 +104,28 @@ FontRenderLetter(char Letter, vector2 TopLeft, real64 ScaleModifier, game_state 
 
 	gl_texture Texture = {};
 	Texture.Image = &CodepointUsing->Bitmap;
-	Texture.Center = (TopLeft + (vector2{0, (real64)CodepointUsing->BaselineFactor} * 0.5f)) * ScaleModifier;
+
+	char *Adjusters = "acemnosruvwxz";
+	uint8 Index = 0;
+	int8 VerticalModifier = 0;
+	while (Adjusters[Index])
+	{
+		if (Adjusters[Index] == Letter)
+		{
+			VerticalModifier = 33;
+		}
+		Index++;
+	}
+	vector2 CenterPos = TopLeft;
+	CenterPos = CenterPos + ((vector2{0, (real64)(CodepointUsing->BaselineFactor + VerticalModifier)} + vector2{(real64)CodepointUsing->Bitmap.Width * 0.5f, (real64)CodepointUsing->Bitmap.Height * 1.5f}) * ScaleModifier);
+	Texture.Center = CenterPos;
+
 	Texture.Scale = vector2{(real64)CodepointUsing->Bitmap.Width, (real64)(CodepointUsing->Bitmap.Height)} * 0.5f * ScaleModifier;
 	PushRenderTexture(GameState, &Texture);
 
 	if (ShowDebugInfo)
 	{
+		PushRenderSquare(GameState, MakeRectangle(Texture.Center, (int32)(10 * ScaleModifier), (int32)(10 * ScaleModifier), color{0.0, 1.0, 0.0, 0.5}));
 		PushRenderSquare(GameState, MakeRectangle(Texture.Center, (int32)(CodepointUsing->Bitmap.Width * ScaleModifier), (int32)(CodepointUsing->Bitmap.Height * ScaleModifier), color{1.0, 0.0, 0.0, 0.5}));
 	}
 }
@@ -118,6 +134,8 @@ FontRenderLetter(char Letter, vector2 TopLeft, real64 ScaleModifier, game_state 
 void
 FontRenderWord(char *Word, vector2 TopLeft, real64 ScaleModifier, game_state * GameState)
 {
+	// vector2 PosAt = TopLeft + vector2{(real64)(GameState->AlphabetBitmaps[(uint32)Word[0]].Bitmap.Width * ScaleModifier) / 2,
+	//                                   (real64)(GameState->AlphabetBitmaps[(uint32)Word[0]].Bitmap.Height * ScaleModifier) / 2};
 	vector2 PosAt = TopLeft;
 
 	uint32 WordLength = CharArrayLength(Word);
@@ -136,12 +154,14 @@ FontRenderWord(char *Word, vector2 TopLeft, real64 ScaleModifier, game_state * G
 		real64 AmountToAdvance = 0;
 		if (LetterIndex + 1 != WordLength)
 		{
-			AmountToAdvance = (GameState->AlphabetBitmaps[(uint32)Word[LetterIndex]].Bitmap.Width / 2) +
-			                  (GameState->AlphabetBitmaps[(uint32)Word[LetterIndex + 1]].Bitmap.Width / 2);
+			AmountToAdvance = (GameState->AlphabetBitmaps[(uint32)Word[LetterIndex]].Bitmap.Width);
+			if ((int)Word[LetterIndex] == (int)' ')
+			{
+				AmountToAdvance = 100 * ScaleModifier;
+			}
 		}
-		PosAt.X += AmountToAdvance + (5 * ScaleModifier);
+		PosAt.X += (AmountToAdvance + 5) * ScaleModifier;
 	}
-
 }
 
 #endif
