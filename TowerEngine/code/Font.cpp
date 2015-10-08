@@ -1,26 +1,17 @@
 #ifndef FONT_CPP
 #define FONT_CPP
 
-
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "stb_truetype.h"
-
-//TODO there are some weird modifiers and weird things going on in here that aren't clean. Fix it at some point.
-// 1 - Most TopLeft variables are not actually top left, they're bottom middle.
-// 2 - I had to half the final rendering size since the bitmap rendering is janky.
 
 //NOTE there are some problems with vertical spacing that I had to manually fix... that sucks.
 
 //NOTE Not entirely sure what this does...
 global_variable real64 GlobalFontRenderSize = 200.0f;
 
-//NOTE I don't think I need this anymore.
-global_variable stbtt_fontinfo GlobalCurrentFontInfo;
-
-//TODO create a debug build path, so this stuff doesn't compile in the final version.
+#if DEBUG_PATH
 global_variable bool32 ShowDebugInfo = false;
-
-int32 FontHeight;
+#endif
 
 void
 MakeBitmapCodepoint(char Letter, platform_read_file *ReadFile, game_state *GameState)
@@ -29,8 +20,9 @@ MakeBitmapCodepoint(char Letter, platform_read_file *ReadFile, game_state *GameS
 	Assert(FontFile.Contents > 0);
 
 	int Width, Height, XOffset, YOffset;
-	stbtt_InitFont(&GlobalCurrentFontInfo, (uint8 *)FontFile.Contents, stbtt_GetFontOffsetForIndex((uint8 *)FontFile.Contents, 0));
-	uint8 *MonoBitmap = stbtt_GetCodepointBitmap(&GlobalCurrentFontInfo, 0, stbtt_ScaleForPixelHeight(&GlobalCurrentFontInfo, (float)GlobalFontRenderSize),
+	stbtt_fontinfo FontInfo;
+	stbtt_InitFont(&FontInfo, (uint8 *)FontFile.Contents, stbtt_GetFontOffsetForIndex((uint8 *)FontFile.Contents, 0));
+	uint8 *MonoBitmap = stbtt_GetCodepointBitmap(&FontInfo, 0, stbtt_ScaleForPixelHeight(&FontInfo, (float)GlobalFontRenderSize),
 	                    Letter, &Width, &Height, &XOffset, &YOffset);
 
 	font_codepoint *NextCodepoint = &GameState->AlphabetBitmaps[GameState->AlphabetBitmapsCount];
@@ -64,7 +56,6 @@ MakeBitmapCodepoint(char Letter, platform_read_file *ReadFile, game_state *GameS
 			uint8 Bit1 = MonoAlpha; // B
 
 			*Dest++ = ((Bit0 << 24) | (Bit1 << 16) | (Bit2 << 8) | (Bit3 << 0));
-			// Dest++;
 		}
 
 		DestRow -= Pitch;
@@ -95,7 +86,6 @@ MakeAlphabetBitmaps(game_state *GameState, platform_read_file *ReadFileFunction)
 	}
 }
 
-//NOTE TopLeft here is not actually TopLeft. It's more bottom Middle.
 void
 FontRenderLetter(char Letter, vector2 TopLeft, real64 ScaleModifier, game_state *GameState)
 {
@@ -116,26 +106,29 @@ FontRenderLetter(char Letter, vector2 TopLeft, real64 ScaleModifier, game_state 
 		}
 		Index++;
 	}
-	vector2 CenterPos = TopLeft;
-	CenterPos = CenterPos + ((vector2{0, (real64)(CodepointUsing->BaselineFactor + VerticalModifier)} + vector2{(real64)CodepointUsing->Bitmap.Width * 0.5f, (real64)CodepointUsing->Bitmap.Height * 1.5f}) * ScaleModifier);
-	Texture.Center = CenterPos;
+	vector2 LetterCenterOffset = vector2{0, (real64)(CodepointUsing->BaselineFactor + VerticalModifier)} +
+	                             vector2{(real64)CodepointUsing->Bitmap.Width * 0.5f, (real64)CodepointUsing->Bitmap.Height * 1.5f};
+	Texture.Center = TopLeft + (LetterCenterOffset * ScaleModifier);
 
 	Texture.Scale = vector2{(real64)CodepointUsing->Bitmap.Width, (real64)(CodepointUsing->Bitmap.Height)} * 0.5f * ScaleModifier;
 	PushRenderTexture(GameState, &Texture);
 
+	#if DEBUG_PATH
 	if (ShowDebugInfo)
 	{
-		PushRenderSquare(GameState, MakeRectangle(Texture.Center, (int32)(10 * ScaleModifier), (int32)(10 * ScaleModifier), color{0.0, 1.0, 0.0, 0.5}));
-		PushRenderSquare(GameState, MakeRectangle(Texture.Center, (int32)(CodepointUsing->Bitmap.Width * ScaleModifier), (int32)(CodepointUsing->Bitmap.Height * ScaleModifier), color{1.0, 0.0, 0.0, 0.5}));
+		PushRenderSquare(GameState, MakeRectangle(Texture.Center,
+		                 (int32)(10 * ScaleModifier), (int32)(10 * ScaleModifier),
+		                 color{0.0, 1.0, 0.0, 0.5}));
+		PushRenderSquare(GameState, MakeRectangle(Texture.Center,
+		                 (int32)(CodepointUsing->Bitmap.Width * ScaleModifier), (int32)(CodepointUsing->Bitmap.Height * ScaleModifier),
+		                 color{1.0, 0.0, 0.0, 0.5}));
 	}
+	#endif
 }
 
-//NOTE TopLeft here is not actually TopLeft. It's more bottom Middle.
 void
 FontRenderWord(char *Word, vector2 TopLeft, real64 ScaleModifier, game_state * GameState)
 {
-	// vector2 PosAt = TopLeft + vector2{(real64)(GameState->AlphabetBitmaps[(uint32)Word[0]].Bitmap.Width * ScaleModifier) / 2,
-	//                                   (real64)(GameState->AlphabetBitmaps[(uint32)Word[0]].Bitmap.Height * ScaleModifier) / 2};
 	vector2 PosAt = TopLeft;
 
 	uint32 WordLength = CharArrayLength(Word);
@@ -143,10 +136,13 @@ FontRenderWord(char *Word, vector2 TopLeft, real64 ScaleModifier, game_state * G
 	     LetterIndex < WordLength;
 	     LetterIndex++)
 	{
+		#if DEBUG_PATH
 		if (ShowDebugInfo)
 		{
-			PushRenderSquare(GameState, MakeRectangle(PosAt * ScaleModifier, (int32)(10 * ScaleModifier), (int32)(10 * ScaleModifier), color{0.0, 0.0, 1.0, 0.5}));
+			PushRenderSquare(GameState, MakeRectangle(PosAt, (int32)(10 * ScaleModifier), (int32)(10 * ScaleModifier),
+			                 color{0.0, 0.0, 1.0, 0.5}));
 		}
+		#endif
 
 		char *Letter = &Word[LetterIndex];
 		FontRenderLetter(*Letter, PosAt, ScaleModifier, GameState);
@@ -160,7 +156,8 @@ FontRenderWord(char *Word, vector2 TopLeft, real64 ScaleModifier, game_state * G
 				AmountToAdvance = 100 * ScaleModifier;
 			}
 		}
-		PosAt.X += (AmountToAdvance + 5) * ScaleModifier;
+		real64 LetterSpacing = 5;
+		PosAt.X += (AmountToAdvance + LetterSpacing) * ScaleModifier;
 	}
 }
 

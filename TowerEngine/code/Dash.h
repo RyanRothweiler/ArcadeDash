@@ -19,11 +19,12 @@
 #define Gigabytes(value) (Megabytes(value) * 1024)
 #define Terrabytes(value) (Megabytes(value) * 1024)
 
-#if SLOW
+#if DEBUG_PATH
 	#define Assert(Expression) if (!(Expression)) {*(int *)0 = 0;}
 #else
-	#define Assert()
+	#define Assert(Expression)
 #endif
+
 
 typedef _int8 int8;
 typedef _int16 int16;
@@ -44,6 +45,7 @@ typedef double real64;
 #include "vector2.cpp"
 #include "Color.cpp"
 #include "String.cpp"
+#include "ArrayList.cpp"
 
 struct game_audio_output_buffer
 {
@@ -226,7 +228,7 @@ struct game_state
 
 	//TODO pull these two variables, (the list size and arrays) out into a list structure
 	uint32 RenderTexturesCount;
-	gl_texture RenderTextures[500];
+	gl_texture RenderTexturesArray[500];
 	uint32 RenderSquaresCount;
 	gl_square RenderSquares[300];
 	uint32 RenderLinesCount;
