@@ -11,6 +11,7 @@ PushRenderTexture(game_state *GameState, gl_texture *Texture)
 	GameState->RenderTextures[GameState->RenderTexturesCount].Image = Texture->Image;
 	GameState->RenderTextures[GameState->RenderTexturesCount].Center = Texture->Center;
 	GameState->RenderTextures[GameState->RenderTexturesCount].Scale = Texture->Scale;
+	GameState->RenderTextures[GameState->RenderTexturesCount].Color = Texture->Color;
 	GameState->RenderTextures[GameState->RenderTexturesCount].RadiansAngle = Texture->RadiansAngle;
 	GameState->RenderTexturesCount++;
 }
@@ -172,16 +173,23 @@ extern "C" GAME_LOOP(GameLoop)
 
 	Assert(sizeof(game_state) <= Memory->PermanentStorageSize);
 	game_state *GameState = (game_state *)Memory->PermanentStorage;
+
+	void *TransientMemoryPointer = Memory->TransientStorage;
+
 	Assert(GameState);
 
 	if (!Memory->IsInitialized)
 	{
-		GameState->PrintFPS = true;
+		//TODO remove this. Add a system to open / close dev debug console
+		GameState->PrintFPS = false;
 
 		GameState->WorldCenter = vector2{0, 0};
 		GameState->CamCenter = vector2{(real64)(WindowInfo->Width / 2), (real64)(WindowInfo->Height / 2)};
 
 		GameState->TestImage = GLLoadBMP("../assets/Background.bmp");
+
+		TransientMemoryHead = (uint8 *)Memory->TransientStorage;
+		list_head *TestList = CreateList();
 
 		GameState->Player.SpeedCoeficient = 1.0f;
 		GameState->Player.BaseSpeed = 1.0f;
@@ -489,13 +497,18 @@ extern "C" GAME_LOOP(GameLoop)
 			PushRenderSquare(GameState, MakeSquare(EntityAbout->Position - WorldCenter, EntityAbout->ColliderWidth, EntityAbout->Color));
 		}
 	}
-	// PushRenderSquare(GameState, MakeSquare(vector2{10, 10}, 10, color{1.0, 1.0, 1.0, 1.0}));
-	// PushRenderSquare(GameState, MakeSquare(vector2{10, 500}, 10, color{1.0, 1.0, 1.0, 1.0}));
-	// FontRenderLetter('A', vector2{10, 10}, 1.0f, GameState);
-	FontRenderWord("Cloud Typography: HEY!", vector2{10, 10} - WorldCenter, 1.0f, GameState);
-	FontRenderWord("Cloud Typography: HEY!", vector2{10, 500} - WorldCenter, 0.5f, GameState);
-	// FontRenderWord("tester", vector2{10, 500}, 1.0f, GameState);
-	// FontRenderWord("Every connected gift spits the irrespective sweat", vector2{0, 0}, 1.0f, GameState);
+
+	char charFPS[MAX_PATH] = {};
+	IntToCharArray(&GameState->PrevFrameFPS, charFPS);
+	real32 FontSize = 0.1f;
+	if (GameState->PrevFrameFPS < 59)
+	{
+		FontRenderWord(charFPS, vector2{10, 10}, FontSize, COLOR_RED, GameState);
+	}
+	else
+	{
+		FontRenderWord(charFPS, vector2{10, 10}, FontSize, COLOR_GREEN, GameState);
+	}
 }
 
 

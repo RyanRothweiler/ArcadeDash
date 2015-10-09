@@ -45,7 +45,8 @@ typedef double real64;
 #include "vector2.cpp"
 #include "Color.cpp"
 #include "String.cpp"
-#include "ArrayList.cpp"
+#include "TransientMemory.cpp"
+#include "LinkedList.cpp"
 
 struct game_audio_output_buffer
 {
@@ -134,6 +135,7 @@ struct gl_texture
 	vector2 Center;
 	vector2 Scale;
 	real64 RadiansAngle;
+	color Color;
 };
 
 struct gl_line
@@ -184,12 +186,6 @@ struct player
 	color BaseColor;
 };
 
-// struct font_bitmap_letter
-// {
-// 	// void *BitmapData;
-// 	loaded_image LetterBitmap;
-// };
-
 #pragma pack(push, 1)
 struct bmp_header
 {
@@ -228,7 +224,7 @@ struct game_state
 
 	//TODO pull these two variables, (the list size and arrays) out into a list structure
 	uint32 RenderTexturesCount;
-	gl_texture RenderTexturesArray[500];
+	gl_texture RenderTextures[500];
 	uint32 RenderSquaresCount;
 	gl_square RenderSquares[300];
 	uint32 RenderLinesCount;
@@ -243,7 +239,7 @@ struct game_state
 
 	bool PrintFPS;
 	char *DebugOutput = "";
-
+	int64 PrevFrameFPS;
 
 	uint32 AlphabetBitmapsCount;
 	font_codepoint AlphabetBitmaps[200];
@@ -286,5 +282,6 @@ GAME_LOOP(GameLoopStub)
 typedef GAME_LOAD_ASSETS(game_load_assets);
 GAME_LOAD_ASSETS(GameLoadAssetsStub)
 { }
+
 
 #endif

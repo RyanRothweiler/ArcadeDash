@@ -87,7 +87,7 @@ MakeAlphabetBitmaps(game_state *GameState, platform_read_file *ReadFileFunction)
 }
 
 void
-FontRenderLetter(char Letter, vector2 TopLeft, real64 ScaleModifier, game_state *GameState)
+FontRenderLetter(char Letter, vector2 TopLeft, real64 ScaleModifier, color Color, game_state *GameState)
 {
 	//NOTE there are half multipliers in here (0.5f) because I'm drawing the bitmaps a bit weird. It's really janky and I'm a little to lazy to fix it since it works.
 	font_codepoint *CodepointUsing = &GameState->AlphabetBitmaps[(uint32)Letter];
@@ -109,7 +109,7 @@ FontRenderLetter(char Letter, vector2 TopLeft, real64 ScaleModifier, game_state 
 	vector2 LetterCenterOffset = vector2{0, (real64)(CodepointUsing->BaselineFactor + VerticalModifier)} +
 	                             vector2{(real64)CodepointUsing->Bitmap.Width * 0.5f, (real64)CodepointUsing->Bitmap.Height * 1.5f};
 	Texture.Center = TopLeft + (LetterCenterOffset * ScaleModifier);
-
+	Texture.Color = Color;
 	Texture.Scale = vector2{(real64)CodepointUsing->Bitmap.Width, (real64)(CodepointUsing->Bitmap.Height)} * 0.5f * ScaleModifier;
 	PushRenderTexture(GameState, &Texture);
 
@@ -127,7 +127,7 @@ FontRenderLetter(char Letter, vector2 TopLeft, real64 ScaleModifier, game_state 
 }
 
 void
-FontRenderWord(char *Word, vector2 TopLeft, real64 ScaleModifier, game_state * GameState)
+FontRenderWord(char *Word, vector2 TopLeft, real64 ScaleModifier, color Color, game_state * GameState)
 {
 	vector2 PosAt = TopLeft;
 
@@ -145,7 +145,7 @@ FontRenderWord(char *Word, vector2 TopLeft, real64 ScaleModifier, game_state * G
 		#endif
 
 		char *Letter = &Word[LetterIndex];
-		FontRenderLetter(*Letter, PosAt, ScaleModifier, GameState);
+		FontRenderLetter(*Letter, PosAt, ScaleModifier, Color, GameState);
 
 		real64 AmountToAdvance = 0;
 		if (LetterIndex + 1 != WordLength)

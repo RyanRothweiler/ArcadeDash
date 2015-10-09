@@ -31,60 +31,6 @@ struct win32_game_code
 
 
 
-int32
-DigitCount(int64 *Input)
-{
-	char NumChar[MAX_PATH] = {};
-	char *NumCharPointer = NumChar;
-
-	int32 Count = 0;
-	int64 tmp = *Input;
-	while (tmp != 0)
-	{
-		tmp = (tmp - *NumCharPointer) / 10;
-		Count++;
-	}
-
-	return (Count);
-}
-
-void
-IntToCharArray(int64 *Input, char *Output)
-{
-	int64 tmp = *Input;
-	char *NumCharPointer = Output + DigitCount(&tmp) - 1;
-
-	while (tmp != 0)
-	{
-		*NumCharPointer-- = '0' + (tmp % 10);
-		tmp = (tmp - *NumCharPointer) / 10;
-	}
-}
-
-
-void
-ConcatCharArrays(char *SourceA, char *SourceB, char *Destination)
-{
-	int32 SourceALength = CharArrayLength(SourceA);
-	int32 SourceBLength = CharArrayLength(SourceB);
-
-	for (int32 Index = 0;
-	     Index < SourceALength;
-	     Index++)
-	{
-		*Destination++ = *SourceA++;
-	}
-
-	for (int32 Index = 0;
-	     Index < SourceBLength;
-	     Index++)
-	{
-		*Destination++ = *SourceB++;
-	}
-
-	*Destination++ = 0;
-}
-
 void
 DebugLine(int64 *Output)
 {
@@ -110,14 +56,6 @@ DebugLine(char *Output)
 	OutputDebugString(FinalOutput);
 }
 
-void
-ConcatIntChar(int64 IntInput, char *CharInput,
-              char *CharOutput)
-{
-	char IntInputAsChar[MAX_PATH] = {};
-	IntToCharArray(&IntInput, IntInputAsChar);
-	ConcatCharArrays(IntInputAsChar, CharInput, CharOutput);
-}
 
 void
 ConcatIntChar(char *CharInput, int64 IntInput,
@@ -570,11 +508,10 @@ int32 main (int32 argc, char **argv)
 	// #endif
 	game_memory GameMemory = {};
 	GameMemory.PermanentStorageSize = Megabytes(64);
-	GameMemory.TransientStorageSize = Megabytes((uint64)1);
+	GameMemory.TransientStorageSize = Megabytes(64);
 	GameMemory.TotalSize = GameMemory.PermanentStorageSize + GameMemory.TransientStorageSize;
 
 	GameMemory.GameMemoryBlock = VirtualAlloc(NULL, (SIZE_T)GameMemory.TotalSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-	DWORD error = GetLastError();
 	GameMemory.PermanentStorage = GameMemory.GameMemoryBlock;
 	GameMemory.TransientStorage = (uint8 *)GameMemory.PermanentStorage + GameMemory.PermanentStorageSize;
 
@@ -757,9 +694,10 @@ int32 main (int32 argc, char **argv)
 		{
 			glPushMatrix();
 
+			gl_texture *TextureRendering = &GameStateFromMemory->RenderTextures[PosCount];
 
-			vector2 Center = GameStateFromMemory->RenderTextures[PosCount].Center;
-			vector2 Scale = GameStateFromMemory->RenderTextures[PosCount].Scale;
+			vector2 Center = TextureRendering->Center;
+			vector2 Scale = TextureRendering->Scale;
 			glEnable(GL_TEXTURE_2D);
 
 			glEnable(GL_BLEND);
@@ -768,9 +706,12 @@ int32 main (int32 argc, char **argv)
 			glBindTexture(GL_TEXTURE_2D, GameStateFromMemory->RenderTextures[PosCount].Image->GLTexture);
 			glBegin(GL_QUADS);
 			{
-				glColor3f(1.0f, 1.0f, 1.0f);
+				glColor4f((GLfloat)TextureRendering->Color.R, (GLfloat)TextureRendering->Color.G,
+				          (GLfloat)TextureRendering->Color.B, (GLfloat)TextureRendering->Color.A);
+				// glColor4f((GLfloat)1.0f, (GLfloat)1.0f,
+				          // (GLfloat)1.0f, (GLfloat)0.5f);
 
-				real64 Radians = GameStateFromMemory->RenderTextures[PosCount].RadiansAngle;
+				real64 Radians = TextureRendering->RadiansAngle;
 
 				vector2 RotatedPoint = {};
 				vector2 OrigPoint = {};
@@ -860,6 +801,7 @@ int32 main (int32 argc, char **argv)
 		{
 			DebugLine(charFPS);
 		}
+		GameStateFromMemory->PrevFrameFPS = FPS;
 
 		PreviousFrameCount = WorkFrameCount;
 		GameMemory.ElapsedCycles = PreviousFrameCount.QuadPart;
