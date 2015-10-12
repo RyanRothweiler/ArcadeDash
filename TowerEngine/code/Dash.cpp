@@ -4,6 +4,7 @@ global_variable platform_read_file *PlatformReadFile;
 global_variable platform_save_state *PlatformSaveState;
 global_variable platform_load_state *PlatformLoadState;
 
+
 void
 PushRenderTexture(game_state *GameState, gl_texture *Texture)
 {
@@ -17,15 +18,19 @@ PushRenderTexture(game_state *GameState, gl_texture *Texture)
 }
 
 void
-PushRenderSquare(game_state *GameState, gl_square Square)
+PushRenderSquare(list_head *ListHead, gl_square Square, game_memory *GameMemory)
 {
-	Assert(_countof(GameState->RenderSquares) > GameState->RenderSquaresCount);
-	GameState->RenderSquares[GameState->RenderSquaresCount].TopLeft = Square.TopLeft;
-	GameState->RenderSquares[GameState->RenderSquaresCount].TopRight = Square.TopRight;
-	GameState->RenderSquares[GameState->RenderSquaresCount].BottomLeft = Square.BottomLeft;
-	GameState->RenderSquares[GameState->RenderSquaresCount].BottomRight = Square.BottomRight;
-	GameState->RenderSquares[GameState->RenderSquaresCount].Color = Square.Color;
-	GameState->RenderSquaresCount++;
+	// Assert(_countof(GameState->RenderSquares) > GameState->RenderSquaresCount);
+
+	// GameState->RenderSquaresCount++;
+
+	list_link *NewLink = CreateLink(ListHead, LINKTYPE_GLSQUARE, GameMemory);
+	gl_square *SquareLinkData = (gl_square *)NewLink->Data;
+	SquareLinkData->TopLeft = Square.TopLeft;
+	SquareLinkData->TopRight = Square.TopRight;
+	SquareLinkData->BottomLeft = Square.BottomLeft;
+	SquareLinkData->BottomRight = Square.BottomRight;
+	SquareLinkData->Color = Square.Color;
 }
 
 gl_square
@@ -173,13 +178,14 @@ extern "C" GAME_LOOP(GameLoop)
 
 	Assert(sizeof(game_state) <= Memory->PermanentStorageSize);
 	game_state *GameState = (game_state *)Memory->PermanentStorage;
-
-	void *TransientMemoryPointer = Memory->TransientStorage;
-
 	Assert(GameState);
+
+	Memory->TransientMemoryHead = (uint8 *)Memory->TransientStorage;
 
 	if (!Memory->IsInitialized)
 	{
+		void *TransientMemoryPointer = Memory->TransientStorage;
+
 		//TODO remove this. Add a system to open / close dev debug console
 		GameState->PrintFPS = false;
 
@@ -188,8 +194,12 @@ extern "C" GAME_LOOP(GameLoop)
 
 		GameState->TestImage = GLLoadBMP("../assets/Background.bmp");
 
-		TransientMemoryHead = (uint8 *)Memory->TransientStorage;
-		list_head *TestList = CreateList();
+		GameState->RenderSquares = *CreateList(Memory);
+		// list_head *TestList = CreateList(Memory->TransientMemoryHead);
+		list_link *NewLink = CreateLink(&GameState->RenderSquares, LINKTYPE_GLTEXTURE, Memory);
+		gl_texture TestTexture = {};
+		TestTexture.Scale = vector2{10, 10};
+		NewLink->Data = &TestTexture;
 
 		GameState->Player.SpeedCoeficient = 1.0f;
 		GameState->Player.BaseSpeed = 1.0f;
@@ -209,52 +219,51 @@ extern "C" GAME_LOOP(GameLoop)
 		// 1 - Wall
 		// 2 - Enemy
 
-		// active_entity *Entity;
-		// uint16 cellSize = 150;
-		// const uint16 GridWidth = 15;
-		// const uint16 GridHeight = 10;
-		// uint16 levelGrid[GridHeight][GridWidth] =
-		// {
-		// 	{0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-		// 	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-		// 	{0, 2, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 2, 0, 1},
-		// 	{0, 0, 1, 1, 0, 0, 2, 1, 0, 0, 1, 0, 2, 2, 1},
-		// 	{0, 0, 0, 1, 1, 0, 0, 1, 0, 2, 1, 0, 2, 0, 1},
-		// 	{0, 2, 0, 2, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1},
-		// 	{1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 2, 1, 0, 1},
-		// 	{1, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 1, 0, 2, 1},
-		// 	{1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1},
-		// 	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-		// };
-		// for (uint16 x = 0; x < GridWidth; x++)
-		// {
-		// 	for (uint16 y = 0; y < GridHeight; y++)
-		// 	{
-		// 		if (levelGrid[y][x] == 1)
-		// 		{
-		// 			Entity = GetNewSingleEntity(GameState);
-		// 			Entity->Color = COLOR_BLACK;
-		// 			Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
-		// 			Entity->ColliderWidth = cellSize + 1;
-		// 			Entity->Alive = true;
-		// 			Entity->Type = ENTITY_TYPE_WALL;
-		// 		}
+		active_entity *Entity;
+		uint16 cellSize = 150;
+		const uint16 GridWidth = 15;
+		const uint16 GridHeight = 10;
+		uint16 levelGrid[GridHeight][GridWidth] =
+		{
+			{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+			{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+			{1, 2, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 2, 0, 1},
+			{1, 0, 1, 1, 0, 0, 2, 1, 0, 0, 1, 0, 2, 2, 1},
+			{1, 0, 0, 1, 1, 0, 0, 1, 0, 2, 1, 0, 2, 0, 1},
+			{1, 2, 0, 2, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1},
+			{1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 2, 1, 0, 1},
+			{1, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 1, 0, 2, 1},
+			{1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1},
+			{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+		};
+		for (uint16 x = 0; x < GridWidth; x++)
+		{
+			for (uint16 y = 0; y < GridHeight; y++)
+			{
+				if (levelGrid[y][x] == 1)
+				{
+					Entity = GetNewSingleEntity(GameState);
+					Entity->Color = COLOR_BLACK;
+					Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
+					Entity->ColliderWidth = cellSize + 1;
+					Entity->Alive = true;
+					Entity->Type = ENTITY_TYPE_WALL;
+				}
 
-		// 		if (levelGrid[y][x] == 2)
-		// 		{
-		// 			Entity = GetNewSingleEntity(GameState);
-		// 			Entity->Color = COLOR_GREEN;
-		// 			Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
-		// 			Entity->ColliderWidth = (uint16)RandomRangeInt(10, 50, GameState);
-		// 			Entity->Alive = true;
-		// 			Entity->Type = ENTITY_TYPE_ENEMY;
-		// 		}
-		// 	}
-		// }
+				if (levelGrid[y][x] == 2)
+				{
+					Entity = GetNewSingleEntity(GameState);
+					Entity->Color = COLOR_GREEN;
+					Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
+					Entity->ColliderWidth = (uint16)RandomRangeInt(10, 50, GameState);
+					Entity->Alive = true;
+					Entity->Type = ENTITY_TYPE_ENEMY;
+				}
+			}
+		}
 
 		GameState->AlphabetBitmapsCount = 0;
 		MakeAlphabetBitmaps(GameState, PlatformReadFile);
-
 
 		// Entity = GetNewSingleEntity(GameState);
 		// Entity->Color = COLOR_GREEN;
@@ -266,19 +275,19 @@ extern "C" GAME_LOOP(GameLoop)
 
 		Memory->IsInitialized = true;
 		PlatformSaveState("GameBeginningState.ts");
-
 	}
 
 	GameState->FrameCounter++;
 
 	player *Player = &GameState->Player;
 
-	GameState->RenderSquaresCount = 0;
+	// GameState->RenderSquaresCount = 0;
 	GameState->RenderTexturesCount = 0;
 	GameState->RenderLinesCount = 0;
 
-
 	GameState->TimeRate = 1.0f;
+
+
 
 	if (UseFourDirections)
 	{
@@ -390,6 +399,17 @@ extern "C" GAME_LOOP(GameLoop)
 	GameState->WorldCenter = GameState->WorldCenter + (PlayerCamDifference * 0.08f * GameState->TimeRate);
 	vector2 WorldCenter = GameState->WorldCenter - GameState->CamCenter;
 
+	char charFPS[MAX_PATH] = {};
+	IntToCharArray(&GameState->PrevFrameFPS, charFPS);
+	real32 FontSize = 0.1f;
+	if (GameState->PrevFrameFPS < 59)
+	{
+		FontRenderWord(charFPS, vector2{10, 10}, FontSize, COLOR_RED, GameState, &GameState->RenderSquares, Memory);
+	}
+	else
+	{
+		FontRenderWord(charFPS, vector2{10, 10}, FontSize, COLOR_GREEN, GameState, &GameState->RenderSquares, Memory);
+	}
 
 	for (int EntityIndex = 0;
 	     EntityIndex < GameState->WorldEntityCount;
@@ -494,20 +514,9 @@ extern "C" GAME_LOOP(GameLoop)
 
 			EntityAbout->ForceOn = VECTOR2_ZERO;
 
-			PushRenderSquare(GameState, MakeSquare(EntityAbout->Position - WorldCenter, EntityAbout->ColliderWidth, EntityAbout->Color));
+			PushRenderSquare(&GameState->RenderSquares, MakeSquare(EntityAbout->Position - WorldCenter, EntityAbout->ColliderWidth, EntityAbout->Color),
+			                 Memory);
 		}
-	}
-
-	char charFPS[MAX_PATH] = {};
-	IntToCharArray(&GameState->PrevFrameFPS, charFPS);
-	real32 FontSize = 0.1f;
-	if (GameState->PrevFrameFPS < 59)
-	{
-		FontRenderWord(charFPS, vector2{10, 10}, FontSize, COLOR_RED, GameState);
-	}
-	else
-	{
-		FontRenderWord(charFPS, vector2{10, 10}, FontSize, COLOR_GREEN, GameState);
 	}
 }
 

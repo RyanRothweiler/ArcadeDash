@@ -708,8 +708,6 @@ int32 main (int32 argc, char **argv)
 			{
 				glColor4f((GLfloat)TextureRendering->Color.R, (GLfloat)TextureRendering->Color.G,
 				          (GLfloat)TextureRendering->Color.B, (GLfloat)TextureRendering->Color.A);
-				// glColor4f((GLfloat)1.0f, (GLfloat)1.0f,
-				          // (GLfloat)1.0f, (GLfloat)0.5f);
 
 				real64 Radians = TextureRendering->RadiansAngle;
 
@@ -742,19 +740,20 @@ int32 main (int32 argc, char **argv)
 		}
 
 		glBindTexture(GL_TEXTURE_2D, 0);
-		for (uint32 SquareIndex = 0;
-		     SquareIndex < GameStateFromMemory->RenderSquaresCount;
+		for (uint32 SquareIndex = 1;
+		     SquareIndex < GameStateFromMemory->RenderSquares.LinkCount;
 		     SquareIndex++)
 		{
 			glBegin(GL_QUADS);
 			{
-				gl_square Square = GameStateFromMemory->RenderSquares[SquareIndex];
-				glColor4f((GLfloat)Square.Color.R, (GLfloat)Square.Color.G, (GLfloat)Square.Color.B, (GLfloat)Square.Color.A);
+				gl_square *Square = (gl_square *)GetLinkData(&GameStateFromMemory->RenderSquares, (uint8)SquareIndex);
+
+				glColor4f((GLfloat)Square->Color.R, (GLfloat)Square->Color.G, (GLfloat)Square->Color.B, (GLfloat)Square->Color.A);
 				// NOTE the order of this can't be changed. Though I can't find any documentation on why or what the correct order is, but this works.
-				glVertex2d(Square.TopRight.X, Square.TopRight.Y);
-				glVertex2d(Square.TopLeft.X, Square.TopLeft.Y);
-				glVertex2d(Square.BottomLeft.X, Square.BottomLeft.Y);
-				glVertex2d(Square.BottomRight.X, Square.BottomRight.Y);
+				glVertex2d(Square->TopRight.X, Square->TopRight.Y);
+				glVertex2d(Square->TopLeft.X, Square->TopLeft.Y);
+				glVertex2d(Square->BottomLeft.X, Square->BottomLeft.Y);
+				glVertex2d(Square->BottomRight.X, Square->BottomRight.Y);
 			}
 			glEnd();
 		}

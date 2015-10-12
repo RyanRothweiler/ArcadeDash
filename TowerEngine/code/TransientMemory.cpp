@@ -1,15 +1,13 @@
-#ifndef TRANSIENTMEM_CPP
-#define TRANSIENTMEM_CPP
+#ifndef TRANSIENTMEMORY_CPP
+#define TRANSIENTMEMORY_CPP
 
-global_variable uint8 *TransientMemoryHead;
-
+//NOTE maybe allocate is the wrong descriptor. It doesn't allocate using any os calls. It's more of an internal allocate. Which is confusing.
 void *
-AllocateTransientMemory(uint32 Size)
+AllocateTransientMemory(game_memory *Memory, uint32 Size)
 {
-	void *CurrMemoryPos = TransientMemoryHead;
-	TransientMemoryHead += Size;
+	void *CurrMemoryPos = Memory->TransientMemoryHead;
+	Memory->TransientMemoryHead += Size;
 	return (CurrMemoryPos);
 }
-
 
 #endif

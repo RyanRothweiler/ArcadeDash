@@ -41,12 +41,50 @@ typedef int32 bool32;
 typedef float real32;
 typedef double real64;
 
+struct read_file_result
+{
+	uint32 ContentsSize;
+	void *Contents;
+};
+
+#define PLATFORM_READ_FILE(name) read_file_result name(char *Path)
+typedef PLATFORM_READ_FILE(platform_read_file);
+
+#define PLATFORM_SAVE_STATE(name) void name(char *FilePath)
+typedef PLATFORM_SAVE_STATE(platform_save_state);
+
+#define PLATFORM_LOAD_STATE(name) void name(char *FilePath)
+typedef PLATFORM_LOAD_STATE(platform_load_state);
+
+
+struct game_memory
+{
+	bool32 IsInitialized;
+
+	uint64 PermanentStorageSize;
+	void *PermanentStorage; // NOTE Required to be cleared to 0 on startup / allocation
+
+	//NOTE this transient memory head is reset to the top of transient storage at the beginning of the game loop
+	// Anything that needs to stick around for more tha one game loop should go in PermanentStorage
+	uint64 TransientStorageSize;
+	void *TransientStorage;
+	uint8 *TransientMemoryHead;
+
+	uint64 TotalSize;
+	void *GameMemoryBlock;
+
+	int64 ElapsedCycles;
+
+	platform_read_file *PlatformReadFile;
+	platform_save_state *PlatformSaveState;
+	platform_load_state *PlatformLoadState;
+};
+
 #include "Math.cpp"
 #include "vector2.cpp"
 #include "Color.cpp"
 #include "String.cpp"
 #include "TransientMemory.cpp"
-#include "LinkedList.cpp"
 
 struct game_audio_output_buffer
 {
@@ -146,6 +184,8 @@ struct gl_line
 	color Color;
 };
 
+#include "LinkedList.cpp"
+
 enum entity_type
 {
 	ENTITY_TYPE_WALL,
@@ -202,11 +242,6 @@ struct bmp_header
 };
 #pragma pack(pop)
 
-struct read_file_result
-{
-	uint32 ContentsSize;
-	void *Contents;
-};
 
 struct game_state
 {
@@ -225,8 +260,11 @@ struct game_state
 	//TODO pull these two variables, (the list size and arrays) out into a list structure
 	uint32 RenderTexturesCount;
 	gl_texture RenderTextures[500];
-	uint32 RenderSquaresCount;
-	gl_square RenderSquares[300];
+
+	// uint32 RenderSquaresCount;
+	// gl_square RenderSquares[300];
+	list_head RenderSquares;
+
 	uint32 RenderLinesCount;
 	gl_line RenderLines[50];
 
@@ -245,34 +283,6 @@ struct game_state
 	font_codepoint AlphabetBitmaps[200];
 };
 
-#define PLATFORM_READ_FILE(name) read_file_result name(char *Path)
-typedef PLATFORM_READ_FILE(platform_read_file);
-
-#define PLATFORM_SAVE_STATE(name) void name(char *FilePath)
-typedef PLATFORM_SAVE_STATE(platform_save_state);
-
-#define PLATFORM_LOAD_STATE(name) void name(char *FilePath)
-typedef PLATFORM_LOAD_STATE(platform_load_state);
-
-struct game_memory
-{
-	bool32 IsInitialized;
-
-	uint64 PermanentStorageSize;
-	void *PermanentStorage; // NOTE Required to be cleared to 0 on startup / allocation
-	uint64 TransientStorageSize;
-	void *TransientStorage;
-
-	uint64 TotalSize;
-	void *GameMemoryBlock;
-
-	int64 ElapsedCycles;
-
-	platform_read_file *PlatformReadFile;
-	platform_save_state *PlatformSaveState;
-	platform_load_state *PlatformLoadState;
-};
-
 #define GAME_LOOP(name) void name(game_memory *Memory, game_input *GameInput, window_info *WindowInfo, game_audio_output_buffer *AudioBuffer)
 typedef GAME_LOOP(game_update_and_render);
 GAME_LOOP(GameLoopStub)
@@ -282,6 +292,5 @@ GAME_LOOP(GameLoopStub)
 typedef GAME_LOAD_ASSETS(game_load_assets);
 GAME_LOAD_ASSETS(GameLoadAssetsStub)
 { }
-
 
 #endif

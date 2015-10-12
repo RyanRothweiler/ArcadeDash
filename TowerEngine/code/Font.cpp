@@ -10,7 +10,7 @@
 global_variable real64 GlobalFontRenderSize = 200.0f;
 
 #if DEBUG_PATH
-global_variable bool32 ShowDebugInfo = false;
+	global_variable bool32 ShowDebugInfo = false;
 #endif
 
 void
@@ -87,7 +87,8 @@ MakeAlphabetBitmaps(game_state *GameState, platform_read_file *ReadFileFunction)
 }
 
 void
-FontRenderLetter(char Letter, vector2 TopLeft, real64 ScaleModifier, color Color, game_state *GameState)
+FontRenderLetter(char Letter, vector2 TopLeft, real64 ScaleModifier, color Color, game_state *GameState,
+                 list_head *SquareListHead, game_memory *GameMemory)
 {
 	//NOTE there are half multipliers in here (0.5f) because I'm drawing the bitmaps a bit weird. It's really janky and I'm a little to lazy to fix it since it works.
 	font_codepoint *CodepointUsing = &GameState->AlphabetBitmaps[(uint32)Letter];
@@ -116,18 +117,21 @@ FontRenderLetter(char Letter, vector2 TopLeft, real64 ScaleModifier, color Color
 	#if DEBUG_PATH
 	if (ShowDebugInfo)
 	{
-		PushRenderSquare(GameState, MakeRectangle(Texture.Center,
-		                 (int32)(10 * ScaleModifier), (int32)(10 * ScaleModifier),
-		                 color{0.0, 1.0, 0.0, 0.5}));
-		PushRenderSquare(GameState, MakeRectangle(Texture.Center,
-		                 (int32)(CodepointUsing->Bitmap.Width * ScaleModifier), (int32)(CodepointUsing->Bitmap.Height * ScaleModifier),
-		                 color{1.0, 0.0, 0.0, 0.5}));
+		PushRenderSquare(SquareListHead,
+		                 MakeRectangle(Texture.Center, (int32)(10 * ScaleModifier), (int32)(10 * ScaleModifier), color{0.0, 1.0, 0.0, 0.5}),
+		                 GameMemory);
+		PushRenderSquare(SquareListHead,
+		                 MakeRectangle(Texture.Center,
+		                               (int32)(CodepointUsing->Bitmap.Width * ScaleModifier), (int32)(CodepointUsing->Bitmap.Height * ScaleModifier),
+		                               color{1.0, 0.0, 0.0, 0.5}),
+		                 GameMemory);
 	}
 	#endif
 }
 
 void
-FontRenderWord(char *Word, vector2 TopLeft, real64 ScaleModifier, color Color, game_state * GameState)
+FontRenderWord(char *Word, vector2 TopLeft, real64 ScaleModifier, color Color, game_state * GameState,
+               list_head *SquareListHead, game_memory *GameMemory)
 {
 	vector2 PosAt = TopLeft;
 
@@ -139,13 +143,14 @@ FontRenderWord(char *Word, vector2 TopLeft, real64 ScaleModifier, color Color, g
 		#if DEBUG_PATH
 		if (ShowDebugInfo)
 		{
-			PushRenderSquare(GameState, MakeRectangle(PosAt, (int32)(10 * ScaleModifier), (int32)(10 * ScaleModifier),
-			                 color{0.0, 0.0, 1.0, 0.5}));
+			PushRenderSquare(SquareListHead,
+			                 MakeRectangle(PosAt, (int32)(10 * ScaleModifier), (int32)(10 * ScaleModifier), color{0.0, 0.0, 1.0, 0.5}),
+			                 GameMemory);
 		}
 		#endif
 
 		char *Letter = &Word[LetterIndex];
-		FontRenderLetter(*Letter, PosAt, ScaleModifier, Color, GameState);
+		FontRenderLetter(*Letter, PosAt, ScaleModifier, Color, GameState, SquareListHead, GameMemory);
 
 		real64 AmountToAdvance = 0;
 		if (LetterIndex + 1 != WordLength)

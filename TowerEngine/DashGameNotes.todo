@@ -1,4 +1,7 @@
 
+ ☐ finish linked list rendering
+ ☐ combine all rendering types into one list
+ ☐ create an order to the rendering, so any kind of object to render at any order
  ☐ reinitialize the game when hotloading. So I can test initialization code easily.
 
 
