@@ -688,90 +688,93 @@ int32 main (int32 argc, char **argv)
 
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		for (uint32 PosCount = 0;
-		     PosCount < (uint32)GameStateFromMemory->RenderTexturesCount;
-		     PosCount++)
+		for (uint32 RenderIndex = 1;
+		     RenderIndex < (uint32)GameStateFromMemory->RenderObjects.LinkCount;
+		     RenderIndex++)
 		{
-			glPushMatrix();
-
-			gl_texture *TextureRendering = &GameStateFromMemory->RenderTextures[PosCount];
-
-			vector2 Center = TextureRendering->Center;
-			vector2 Scale = TextureRendering->Scale;
-			glEnable(GL_TEXTURE_2D);
-
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-			glBindTexture(GL_TEXTURE_2D, GameStateFromMemory->RenderTextures[PosCount].Image->GLTexture);
-			glBegin(GL_QUADS);
+			list_link *LinkRendering = GetLink(&GameStateFromMemory->RenderObjects, RenderIndex);
+			switch (LinkRendering->DataType)
 			{
-				glColor4f((GLfloat)TextureRendering->Color.R, (GLfloat)TextureRendering->Color.G,
-				          (GLfloat)TextureRendering->Color.B, (GLfloat)TextureRendering->Color.A);
+				case LINKTYPE_GLTEXTURE:
+				{
+					glPushMatrix();
 
-				real64 Radians = TextureRendering->RadiansAngle;
+					gl_texture *TextureRendering = (gl_texture *)LinkRendering->Data;
 
-				vector2 RotatedPoint = {};
-				vector2 OrigPoint = {};
+					vector2 Center = TextureRendering->Center;
+					vector2 Scale = TextureRendering->Scale;
+					glEnable(GL_TEXTURE_2D);
 
-				OrigPoint = {Center.X - Scale.X, Center.Y - Scale.Y};
-				RotatedPoint = Vector2RotatePoint(OrigPoint, Center, Radians);
-				glTexCoord2f(0, 1);
-				glVertex2f((GLfloat)RotatedPoint.X, (GLfloat)RotatedPoint.Y);
+					glEnable(GL_BLEND);
+					glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-				OrigPoint = {Center.X + Scale.X, Center.Y - Scale.Y};
-				RotatedPoint = Vector2RotatePoint(OrigPoint, Center, Radians);
-				glTexCoord2f(1, 1);
-				glVertex2f((GLfloat)RotatedPoint.X, (GLfloat)RotatedPoint.Y);
+					glBindTexture(GL_TEXTURE_2D, TextureRendering->Image->GLTexture);
+					glBegin(GL_QUADS);
+					{
+						glColor4f((GLfloat)TextureRendering->Color.R, (GLfloat)TextureRendering->Color.G,
+						          (GLfloat)TextureRendering->Color.B, (GLfloat)TextureRendering->Color.A);
 
-				OrigPoint = {Center.X + Scale.X, Center.Y + Scale.Y};
-				RotatedPoint = Vector2RotatePoint(OrigPoint, Center, Radians);
-				glTexCoord2f(1, 0);
-				glVertex2f((GLfloat)RotatedPoint.X, (GLfloat)RotatedPoint.Y);
+						real64 Radians = TextureRendering->RadiansAngle;
 
-				OrigPoint = {Center.X - Scale.X, Center.Y + Scale.Y};
-				RotatedPoint = Vector2RotatePoint(OrigPoint, Center, Radians);
-				glTexCoord2f(0, 0);
-				glVertex2f((GLfloat)RotatedPoint.X, (GLfloat)RotatedPoint.Y);
+						vector2 RotatedPoint = {};
+						vector2 OrigPoint = {};
+
+						OrigPoint = {Center.X - Scale.X, Center.Y - Scale.Y};
+						RotatedPoint = Vector2RotatePoint(OrigPoint, Center, Radians);
+						glTexCoord2f(0, 1);
+						glVertex2f((GLfloat)RotatedPoint.X, (GLfloat)RotatedPoint.Y);
+
+						OrigPoint = {Center.X + Scale.X, Center.Y - Scale.Y};
+						RotatedPoint = Vector2RotatePoint(OrigPoint, Center, Radians);
+						glTexCoord2f(1, 1);
+						glVertex2f((GLfloat)RotatedPoint.X, (GLfloat)RotatedPoint.Y);
+
+						OrigPoint = {Center.X + Scale.X, Center.Y + Scale.Y};
+						RotatedPoint = Vector2RotatePoint(OrigPoint, Center, Radians);
+						glTexCoord2f(1, 0);
+						glVertex2f((GLfloat)RotatedPoint.X, (GLfloat)RotatedPoint.Y);
+
+						OrigPoint = {Center.X - Scale.X, Center.Y + Scale.Y};
+						RotatedPoint = Vector2RotatePoint(OrigPoint, Center, Radians);
+						glTexCoord2f(0, 0);
+						glVertex2f((GLfloat)RotatedPoint.X, (GLfloat)RotatedPoint.Y);
+					}
+					glEnd();
+
+					glPopMatrix();
+				}
+
+				case LINKTYPE_GLLINE:
+				{
+					gl_line *Line = (gl_line *)LinkRendering->Data;
+					glColor4f((GLfloat)Line->Color.R, (GLfloat)Line->Color.G, (GLfloat)Line->Color.B, (GLfloat)Line->Color.A);
+					glBegin(GL_LINES);
+					{
+						glVertex2d(Line->Start.X, Line->Start.Y);
+						glVertex2d(Line->End.X, Line->End.Y);
+					}
+					glEnd();
+				}
+
+				case LINKTYPE_GLSQUARE:
+				{
+					glBindTexture(GL_TEXTURE_2D, 0);
+					glBegin(GL_QUADS);
+					{
+						gl_square *Square = (gl_square *)LinkRendering->Data;
+
+						glColor4f((GLfloat)Square->Color.R, (GLfloat)Square->Color.G, (GLfloat)Square->Color.B, (GLfloat)Square->Color.A);
+						// NOTE the order of this can't be changed. Though I can't find any documentation on why or what the correct order is, but this works.
+						glVertex2d(Square->TopRight.X, Square->TopRight.Y);
+						glVertex2d(Square->TopLeft.X, Square->TopLeft.Y);
+						glVertex2d(Square->BottomLeft.X, Square->BottomLeft.Y);
+						glVertex2d(Square->BottomRight.X, Square->BottomRight.Y);
+					}
+					glEnd();
+				}
 			}
-			glEnd();
 
-			glPopMatrix();
 		}
-
-		glBindTexture(GL_TEXTURE_2D, 0);
-		for (uint32 SquareIndex = 1;
-		     SquareIndex < GameStateFromMemory->RenderSquares.LinkCount;
-		     SquareIndex++)
-		{
-			glBegin(GL_QUADS);
-			{
-				gl_square *Square = (gl_square *)GetLinkData(&GameStateFromMemory->RenderSquares, (uint8)SquareIndex);
-
-				glColor4f((GLfloat)Square->Color.R, (GLfloat)Square->Color.G, (GLfloat)Square->Color.B, (GLfloat)Square->Color.A);
-				// NOTE the order of this can't be changed. Though I can't find any documentation on why or what the correct order is, but this works.
-				glVertex2d(Square->TopRight.X, Square->TopRight.Y);
-				glVertex2d(Square->TopLeft.X, Square->TopLeft.Y);
-				glVertex2d(Square->BottomLeft.X, Square->BottomLeft.Y);
-				glVertex2d(Square->BottomRight.X, Square->BottomRight.Y);
-			}
-			glEnd();
-		}
-
-		for (uint32 LineIndex = 0;
-		     LineIndex < GameStateFromMemory->RenderLinesCount;
-		     LineIndex++)
-		{
-			gl_line Line = GameStateFromMemory->RenderLines[LineIndex];
-			glColor4f((GLfloat)Line.Color.R, (GLfloat)Line.Color.G, (GLfloat)Line.Color.B, (GLfloat)Line.Color.A);
-			glBegin(GL_LINES);
-			{
-				glVertex2d(Line.Start.X, Line.Start.Y);
-				glVertex2d(Line.End.X, Line.End.Y);
-			}
-			glEnd();
-		}
-
 
 		glfwSwapBuffers(OpenGLWindow);
 

@@ -6,24 +6,20 @@ global_variable platform_load_state *PlatformLoadState;
 
 
 void
-PushRenderTexture(game_state *GameState, gl_texture *Texture)
+PushRenderTexture(list_head *ListHead, gl_texture *Texture, game_memory *GameMemory)
 {
-	Assert(_countof(GameState->RenderTextures) > GameState->RenderTexturesCount);
-	GameState->RenderTextures[GameState->RenderTexturesCount].Image = Texture->Image;
-	GameState->RenderTextures[GameState->RenderTexturesCount].Center = Texture->Center;
-	GameState->RenderTextures[GameState->RenderTexturesCount].Scale = Texture->Scale;
-	GameState->RenderTextures[GameState->RenderTexturesCount].Color = Texture->Color;
-	GameState->RenderTextures[GameState->RenderTexturesCount].RadiansAngle = Texture->RadiansAngle;
-	GameState->RenderTexturesCount++;
+	list_link *NewLink = CreateLink(ListHead, LINKTYPE_GLTEXTURE, GameMemory);
+	gl_texture *TextureLinkData = (gl_texture *)NewLink->Data;
+	TextureLinkData->Image = Texture->Image;
+	TextureLinkData->Center = Texture->Center;
+	TextureLinkData->Scale = Texture->Scale;
+	TextureLinkData->Color = Texture->Color;
+	TextureLinkData->RadiansAngle = Texture->RadiansAngle;
 }
 
 void
 PushRenderSquare(list_head *ListHead, gl_square Square, game_memory *GameMemory)
 {
-	// Assert(_countof(GameState->RenderSquares) > GameState->RenderSquaresCount);
-
-	// GameState->RenderSquaresCount++;
-
 	list_link *NewLink = CreateLink(ListHead, LINKTYPE_GLSQUARE, GameMemory);
 	gl_square *SquareLinkData = (gl_square *)NewLink->Data;
 	SquareLinkData->TopLeft = Square.TopLeft;
@@ -182,6 +178,7 @@ extern "C" GAME_LOOP(GameLoop)
 
 	Memory->TransientMemoryHead = (uint8 *)Memory->TransientStorage;
 
+
 	if (!Memory->IsInitialized)
 	{
 		void *TransientMemoryPointer = Memory->TransientStorage;
@@ -194,12 +191,11 @@ extern "C" GAME_LOOP(GameLoop)
 
 		GameState->TestImage = GLLoadBMP("../assets/Background.bmp");
 
-		GameState->RenderSquares = *CreateList(Memory);
 		// list_head *TestList = CreateList(Memory->TransientMemoryHead);
-		list_link *NewLink = CreateLink(&GameState->RenderSquares, LINKTYPE_GLTEXTURE, Memory);
-		gl_texture TestTexture = {};
-		TestTexture.Scale = vector2{10, 10};
-		NewLink->Data = &TestTexture;
+		// list_link *NewLink = CreateLink(&GameState->RenderSquares, LINKTYPE_GLTEXTURE, Memory);
+		// gl_texture TestTexture = {};
+		// TestTexture.Scale = vector2{10, 10};
+		// NewLink->Data = &TestTexture;
 
 		GameState->Player.SpeedCoeficient = 1.0f;
 		GameState->Player.BaseSpeed = 1.0f;
@@ -265,11 +261,11 @@ extern "C" GAME_LOOP(GameLoop)
 		GameState->AlphabetBitmapsCount = 0;
 		MakeAlphabetBitmaps(GameState, PlatformReadFile);
 
-		// Entity = GetNewSingleEntity(GameState);
-		// Entity->Color = COLOR_GREEN;
-		// Entity->Position = vector2{100, 700};
-		// Entity->ColliderWidth = 30;
-		// Entity->Alive = true;
+		Entity = GetNewSingleEntity(GameState);
+		Entity->Color = COLOR_GREEN;
+		Entity->Position = vector2{100, 700};
+		Entity->ColliderWidth = 30;
+		Entity->Alive = true;
 
 		GameState->FrameCounter = 0;
 
@@ -281,13 +277,11 @@ extern "C" GAME_LOOP(GameLoop)
 
 	player *Player = &GameState->Player;
 
-	// GameState->RenderSquaresCount = 0;
-	GameState->RenderTexturesCount = 0;
-	GameState->RenderLinesCount = 0;
-
 	GameState->TimeRate = 1.0f;
 
+	GameState->RenderObjects = *CreateList(Memory);
 
+	PushRenderSquare(&GameState->RenderObjects, MakeSquare(vector2{10, 10}, 100, COLOR_GREEN), Memory);
 
 	if (UseFourDirections)
 	{
@@ -404,11 +398,11 @@ extern "C" GAME_LOOP(GameLoop)
 	real32 FontSize = 0.1f;
 	if (GameState->PrevFrameFPS < 59)
 	{
-		FontRenderWord(charFPS, vector2{10, 10}, FontSize, COLOR_RED, GameState, &GameState->RenderSquares, Memory);
+		// FontRenderWord(charFPS, vector2{10, 10}, FontSize, COLOR_RED, GameState, &GameState->RenderSquares, Memory);
 	}
 	else
 	{
-		FontRenderWord(charFPS, vector2{10, 10}, FontSize, COLOR_GREEN, GameState, &GameState->RenderSquares, Memory);
+		// FontRenderWord(charFPS, vector2{10, 10}, FontSize, COLOR_GREEN, GameState, &GameState->RenderSquares, Memory);
 	}
 
 	for (int EntityIndex = 0;
@@ -514,7 +508,8 @@ extern "C" GAME_LOOP(GameLoop)
 
 			EntityAbout->ForceOn = VECTOR2_ZERO;
 
-			PushRenderSquare(&GameState->RenderSquares, MakeSquare(EntityAbout->Position - WorldCenter, EntityAbout->ColliderWidth, EntityAbout->Color),
+			PushRenderSquare(&GameState->RenderObjects,
+			                 MakeSquare(EntityAbout->Position - WorldCenter, EntityAbout->ColliderWidth, EntityAbout->Color),
 			                 Memory);
 		}
 	}

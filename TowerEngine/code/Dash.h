@@ -258,15 +258,15 @@ struct game_state
 	active_entity EntityBucket[200];
 
 	//TODO pull these two variables, (the list size and arrays) out into a list structure
-	uint32 RenderTexturesCount;
-	gl_texture RenderTextures[500];
+	list_head RenderObjects;
 
-	// uint32 RenderSquaresCount;
-	// gl_square RenderSquares[300];
-	list_head RenderSquares;
+	// uint32 RenderTexturesCount;
+	// gl_texture RenderTextures[500];
 
-	uint32 RenderLinesCount;
-	gl_line RenderLines[50];
+	// list_head RenderSquares;
+
+	// uint32 RenderLinesCount;
+	// gl_line RenderLines[50];
 
 	int32 WorldEntityCount;
 	active_entity *WorldEntities[300];
