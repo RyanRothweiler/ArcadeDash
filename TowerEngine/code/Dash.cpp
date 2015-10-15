@@ -29,6 +29,19 @@ PushRenderSquare(list_head *ListHead, gl_square Square, game_memory *GameMemory)
 	SquareLinkData->Color = Square.Color;
 }
 
+void
+PushRenderSquare(list_head *ListHead, gl_square Square, uint8 LayerIndex, game_memory *GameMemory)
+{
+	list_link *NewLink = CreateLink(ListHead, LINKTYPE_GLSQUARE, GameMemory);
+	gl_square *SquareLinkData = (gl_square *)NewLink->Data;
+	SquareLinkData->TopLeft = Square.TopLeft;
+	SquareLinkData->TopRight = Square.TopRight;
+	SquareLinkData->BottomLeft = Square.BottomLeft;
+	SquareLinkData->BottomRight = Square.BottomRight;
+	SquareLinkData->Color = Square.Color;
+}
+
+
 gl_square
 MakeRectangle(vector2 Pos, int32 Width, int32 Height, color Color)
 {
@@ -261,12 +274,6 @@ extern "C" GAME_LOOP(GameLoop)
 		GameState->AlphabetBitmapsCount = 0;
 		MakeAlphabetBitmaps(GameState, PlatformReadFile);
 
-		Entity = GetNewSingleEntity(GameState);
-		Entity->Color = COLOR_GREEN;
-		Entity->Position = vector2{100, 700};
-		Entity->ColliderWidth = 30;
-		Entity->Alive = true;
-
 		GameState->FrameCounter = 0;
 
 		Memory->IsInitialized = true;
@@ -280,8 +287,6 @@ extern "C" GAME_LOOP(GameLoop)
 	GameState->TimeRate = 1.0f;
 
 	GameState->RenderObjects = *CreateList(Memory);
-
-	PushRenderSquare(&GameState->RenderObjects, MakeSquare(vector2{10, 10}, 100, COLOR_GREEN), Memory);
 
 	if (UseFourDirections)
 	{
@@ -398,11 +403,11 @@ extern "C" GAME_LOOP(GameLoop)
 	real32 FontSize = 0.1f;
 	if (GameState->PrevFrameFPS < 59)
 	{
-		// FontRenderWord(charFPS, vector2{10, 10}, FontSize, COLOR_RED, GameState, &GameState->RenderSquares, Memory);
+		FontRenderWord(charFPS, vector2{10, 10}, FontSize, COLOR_RED, GameState, &GameState->RenderObjects, Memory);
 	}
 	else
 	{
-		// FontRenderWord(charFPS, vector2{10, 10}, FontSize, COLOR_GREEN, GameState, &GameState->RenderSquares, Memory);
+		FontRenderWord(charFPS, vector2{10, 10}, FontSize, COLOR_GREEN, GameState, &GameState->RenderObjects, Memory);
 	}
 
 	for (int EntityIndex = 0;

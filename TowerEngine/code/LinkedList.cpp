@@ -9,7 +9,7 @@ enum link_type
 {
 	LINKTYPE_GLTEXTURE,
 	LINKTYPE_GLSQUARE,
-	LINKTYPE_GLLINE
+	LINKTYPE_GLLINE,
 };
 
 struct list_link
@@ -49,7 +49,7 @@ GetLink(list_head *Head, uint32 LinkNum)
 
 	}
 
-	//MOTE did not find the link, or there was some issue.
+	//NOTE did not find the link, or there was some issue.
 	Assert(0);
 	return (NULL);
 }
@@ -98,8 +98,7 @@ CreateLink(list_head *Head, link_type Type, game_memory *GameMemory)
 		}
 	}
 
-	//NOTE if asserted here then make sure you add the new link_type into this switch
-	Assert(DataSize > 0);
+	AssertM(DataSize > 0, "Make sure you add the new link_type into the above switch");
 	NewLink->Data = AllocateTransientMemory(GameMemory, DataSize);
 
 	if (Head->LinkCount != 0)
@@ -109,6 +108,79 @@ CreateLink(list_head *Head, link_type Type, game_memory *GameMemory)
 	}
 
 	Head->BottomLink = NewLink;
+	Head->LinkCount++;
+
+	return (NewLink);
+}
+
+list_link *
+CreateLink(list_head *Head, link_type Type, uint32 InsertionIndex, game_memory *GameMemory)
+{
+	//NOTE holly asserts
+	Assert(InsertionIndex >= 1);
+	AssertM(InsertionIndex <= Head->LinkCount, "This checks that the place asserting is valid");
+	Assert(Head->LinkCount > 0);
+
+
+
+
+
+
+
+
+
+	list_link *NewLink = (list_link *)AllocateTransientMemory(GameMemory, sizeof(list_link));
+	NewLink->DataType = Type;
+
+	uint32 DataSize = 0;
+	switch (Type)
+	{
+		case LINKTYPE_GLTEXTURE:
+		{
+			DataSize = sizeof(gl_texture);
+			break;
+		}
+		case LINKTYPE_GLSQUARE:
+		{
+			DataSize = sizeof(gl_square);
+			break;
+		}
+		case LINKTYPE_GLLINE:
+		{
+			DataSize = sizeof(gl_line);
+			break;
+		}
+	}
+
+	AssertM(DataSize > 0, "Make sure you add the new link_type into the above switch");
+	NewLink->Data = AllocateTransientMemory(GameMemory, DataSize);
+
+
+
+
+
+	list_link *ForwardLink = {};
+	if (InsertionIndex != 1)
+	{
+		ForwardLink = GetLink(Head, InsertionIndex - 1);
+	}
+	if (InsertionIndex != Head->LinkCount)
+	{
+		list_link *BackLink = GetLink(Head, InsertionIndex);
+		NewLink->NextLink = BackLink;
+	}
+	if (ForwardLink != NULL)
+	{
+		ForwardLink->NextLink = NewLink;
+	}
+	else
+	{
+		Head->TopLink = NewLink;
+	}
+
+
+
+
 	Head->LinkCount++;
 
 	return (NewLink);

@@ -4,6 +4,8 @@
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "stb_truetype.h"
 
+//TODO there are some weird artifacts when rendering the text, can be seen in the top left of the fps text
+
 //NOTE there are some problems with vertical spacing that I had to manually fix... that sucks.
 
 //NOTE Not entirely sure what this does...

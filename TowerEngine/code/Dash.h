@@ -21,8 +21,12 @@
 
 #if DEBUG_PATH
 	#define Assert(Expression) if (!(Expression)) {*(int *)0 = 0;}
+	//NOTE AssertM is the same as Assert it just has a message perameter to say how to fix the assert. 
+	// Just so we don't have to comment it every time
+	#define AssertM(Expression, Message) if (!(Expression)) {*(int *)0 = 0;}
 #else
 	#define Assert(Expression)
+	#define AssertM(Expression, Message)
 #endif
 
 
@@ -257,17 +261,10 @@ struct game_state
 	uint32 EntityBucketCount;
 	active_entity EntityBucket[200];
 
-	//TODO pull these two variables, (the list size and arrays) out into a list structure
 	list_head RenderObjects;
+	uint8 RenderLayerIndecies;
 
-	// uint32 RenderTexturesCount;
-	// gl_texture RenderTextures[500];
-
-	// list_head RenderSquares;
-
-	// uint32 RenderLinesCount;
-	// gl_line RenderLines[50];
-
+	//TODO change this to a list, first need to expand list to use given memory. 
 	int32 WorldEntityCount;
 	active_entity *WorldEntities[300];
 
