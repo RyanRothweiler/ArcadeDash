@@ -507,13 +507,13 @@ int32 main (int32 argc, char **argv)
 	// LPVOID BaseAddress = 0;
 	// #endif
 	game_memory GameMemory = {};
-	GameMemory.PermanentStorageSize = Megabytes(64);
-	GameMemory.TransientStorageSize = Megabytes(64);
-	GameMemory.TotalSize = GameMemory.PermanentStorageSize + GameMemory.TransientStorageSize;
+	GameMemory.PermanentMemory.Size = Megabytes(64);
+	GameMemory.TransientMemory.Size = Megabytes(64);
+	GameMemory.TotalSize = GameMemory.PermanentMemory.Size + GameMemory.TransientMemory.Size;
 
 	GameMemory.GameMemoryBlock = VirtualAlloc(NULL, (SIZE_T)GameMemory.TotalSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-	GameMemory.PermanentStorage = GameMemory.GameMemoryBlock;
-	GameMemory.TransientStorage = (uint8 *)GameMemory.PermanentStorage + GameMemory.PermanentStorageSize;
+	GameMemory.PermanentMemory.Memory = GameMemory.GameMemoryBlock;
+	GameMemory.TransientMemory.Memory = (uint8 *)GameMemory.PermanentMemory.Memory + GameMemory.PermanentMemory.Size;
 
 	GameMemory.PlatformReadFile = PlatformReadFile;
 	GameMemory.PlatformSaveState = PlatformSaveState;
@@ -664,7 +664,7 @@ int32 main (int32 argc, char **argv)
 			GameAudio.Samples = AudioSamplesMemory;
 		}
 
-		game_state *GameStateFromMemory = (game_state *)GameMemory.PermanentStorage;
+		game_state *GameStateFromMemory = (game_state *)GameMemory.PermanentMemory.Memory;
 		SYSTEMTIME SystemTime = {};
 		GetSystemTime(&SystemTime);
 		GameStateFromMemory->RandomGenState += SystemTime.wMilliseconds + SystemTime.wSecond + SystemTime.wMinute +
@@ -677,7 +677,7 @@ int32 main (int32 argc, char **argv)
 		GameCode.GameLoop(&GameMemory, &GameInput, &ScreenBuffer, &GameAudio);
 		FillSoundOutput(&GameAudio, &SoundOutput, ByteToLock, BytesToWrite);
 
-		GameStateFromMemory = (game_state *)GameMemory.PermanentStorage;
+		GameStateFromMemory = (game_state *)GameMemory.PermanentMemory.Memory;
 		char *EmptyChar = "";
 		if (GameStateFromMemory->DebugOutput &&
 		    GameStateFromMemory->DebugOutput != EmptyChar)

@@ -21,7 +21,7 @@
 
 #if DEBUG_PATH
 	#define Assert(Expression) if (!(Expression)) {*(int *)0 = 0;}
-	//NOTE AssertM is the same as Assert it just has a message perameter to say how to fix the assert. 
+	//NOTE AssertM is the same as Assert it just has a message perameter to say how to fix the assert.
 	// Just so we don't have to comment it every time
 	#define AssertM(Expression, Message) if (!(Expression)) {*(int *)0 = 0;}
 #else
@@ -60,22 +60,26 @@ typedef PLATFORM_SAVE_STATE(platform_save_state);
 #define PLATFORM_LOAD_STATE(name) void name(char *FilePath)
 typedef PLATFORM_LOAD_STATE(platform_load_state);
 
+struct memory_arena
+{
+	uint64 Size;
+	void *Memory;
+	uint8 *Head;
+};
 
 struct game_memory
 {
 	bool32 IsInitialized;
 
-	uint64 PermanentStorageSize;
-	void *PermanentStorage; // NOTE Required to be cleared to 0 on startup / allocation
+	uint64 TotalSize;
+	void *GameMemoryBlock;
+
+	//NOTE required to be cleared to 9 on startup / allocation
+	memory_arena PermanentMemory;
 
 	//NOTE this transient memory head is reset to the top of transient storage at the beginning of the game loop
 	// Anything that needs to stick around for more tha one game loop should go in PermanentStorage
-	uint64 TransientStorageSize;
-	void *TransientStorage;
-	uint8 *TransientMemoryHead;
-
-	uint64 TotalSize;
-	void *GameMemoryBlock;
+	memory_arena TransientMemory;
 
 	int64 ElapsedCycles;
 
@@ -204,6 +208,7 @@ struct active_entity
 
 	real32 MovementSpeed;
 
+	loaded_image Sprite;
 	color Color;
 
 	uint16 ColliderWidth;
@@ -246,7 +251,6 @@ struct bmp_header
 };
 #pragma pack(pop)
 
-
 struct game_state
 {
 	uint32 RandomGenState;
@@ -262,9 +266,9 @@ struct game_state
 	active_entity EntityBucket[200];
 
 	list_head RenderObjects;
-	uint8 RenderLayerIndecies;
+	uint8 RenderLayerCount;
 
-	//TODO change this to a list, first need to expand list to use given memory. 
+	//TODO change this to a list, first need to expand list to use given memory.
 	int32 WorldEntityCount;
 	active_entity *WorldEntities[300];
 

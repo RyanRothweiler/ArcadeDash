@@ -1,8 +1,14 @@
 
- ☐ finish linked list rendering
- ☐ combine all rendering types into one list
+ ☐ finish render layer code
+ ((LayerCount - Layer to insert) / LayerCount) * ListSize = Index to insert in.
+
  ☐ create an order to the rendering, so any kind of object to render at any order
  ☐ reinitialize the game when hotloading. So I can test initialization code easily.
+
+
+
+Game Notes:
+ ☐ remove the slight slide when changing directions. Needs to be instant.
 
 
 Engine Notes:
@@ -14,4 +20,6 @@ Engine Notes:
 
 ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
 Archive:
+ ✔ finish linked list rendering @done (15-10-15 20:14)
+ ✔ combine all rendering types into one list @done (15-10-15 20:14)
  ✔ put in a lose state. maybe restart the game. @done (15-09-30 21:18)

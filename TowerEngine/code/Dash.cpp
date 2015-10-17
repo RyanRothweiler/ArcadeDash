@@ -6,9 +6,9 @@ global_variable platform_load_state *PlatformLoadState;
 
 
 void
-PushRenderTexture(list_head *ListHead, gl_texture *Texture, game_memory *GameMemory)
+PushRenderTexture(list_head *ListHead, gl_texture *Texture, memory_arena *Memory)
 {
-	list_link *NewLink = CreateLink(ListHead, LINKTYPE_GLTEXTURE, GameMemory);
+	list_link *NewLink = CreateLink(ListHead, LINKTYPE_GLTEXTURE, Memory);
 	gl_texture *TextureLinkData = (gl_texture *)NewLink->Data;
 	TextureLinkData->Image = Texture->Image;
 	TextureLinkData->Center = Texture->Center;
@@ -18,9 +18,9 @@ PushRenderTexture(list_head *ListHead, gl_texture *Texture, game_memory *GameMem
 }
 
 void
-PushRenderSquare(list_head *ListHead, gl_square Square, game_memory *GameMemory)
+PushRenderSquare(list_head *ListHead, gl_square Square, memory_arena *Memory)
 {
-	list_link *NewLink = CreateLink(ListHead, LINKTYPE_GLSQUARE, GameMemory);
+	list_link *NewLink = CreateLink(ListHead, LINKTYPE_GLSQUARE, Memory);
 	gl_square *SquareLinkData = (gl_square *)NewLink->Data;
 	SquareLinkData->TopLeft = Square.TopLeft;
 	SquareLinkData->TopRight = Square.TopRight;
@@ -30,9 +30,9 @@ PushRenderSquare(list_head *ListHead, gl_square Square, game_memory *GameMemory)
 }
 
 void
-PushRenderSquare(list_head *ListHead, gl_square Square, uint8 LayerIndex, game_memory *GameMemory)
+PushRenderSquare(list_head *ListHead, gl_square Square, uint8 LayerIndex, memory_arena *Memory)
 {
-	list_link *NewLink = CreateLink(ListHead, LINKTYPE_GLSQUARE, GameMemory);
+	list_link *NewLink = CreateLink(ListHead, LINKTYPE_GLSQUARE, LayerIndex, Memory);
 	gl_square *SquareLinkData = (gl_square *)NewLink->Data;
 	SquareLinkData->TopLeft = Square.TopLeft;
 	SquareLinkData->TopRight = Square.TopRight;
@@ -78,27 +78,27 @@ MakeSquare(vector2 Pos, int32 SideLength, color Color)
 #include "Font.cpp"
 
 real64
-RandomRangeFloat(real32 Bottom, real32 Top, game_state *GameState)
+RandomRangeFloat(real32 Bottom, real32 Top, uint32 *RandomGenState)
 {
 	Assert(Bottom < Top);
 	real64 Result = 0;
 
 	uint32 RandomMax = 1000;
-	uint32 RandomInt = (10 * GameState->RandomGenState % RandomMax);
+	uint32 RandomInt = (10 * *RandomGenState % RandomMax);
 	real64 RandomScalar = (real32)RandomInt / (real32)RandomMax;
 
 	real64 ScaledNum = (real64)((Top - Bottom) * RandomScalar);
 	Result = ScaledNum + Bottom;
 
-	GameState->RandomGenState += GameState->RandomGenState;
+	*RandomGenState += *RandomGenState;
 
 	return (Result);
 }
 
 int64
-RandomRangeInt(int32 Bottom, int32 Top, game_state *GameState)
+RandomRangeInt(int32 Bottom, int32 Top, uint32 *RandomGenState)
 {
-	real64 Result = RandomRangeFloat((real32)Bottom, (real32)Top, GameState);
+	real64 Result = RandomRangeFloat((real32)Bottom, (real32)Top, RandomGenState);
 	return ((int64)Result);
 }
 
@@ -125,6 +125,7 @@ GetNewSingleEntity(game_state *GameState)
 	return (Result);
 }
 
+//TODO make this save the data in some given memory
 loaded_image
 GLLoadBMP(char *FilePath)
 {
@@ -185,17 +186,15 @@ extern "C" GAME_LOOP(GameLoop)
 
 	bool32 UseFourDirections = true;
 
-	Assert(sizeof(game_state) <= Memory->PermanentStorageSize);
-	game_state *GameState = (game_state *)Memory->PermanentStorage;
+	Assert(sizeof(game_state) <= Memory->PermanentMemory.Size);
+	game_state *GameState = (game_state *)Memory->PermanentMemory.Memory;
 	Assert(GameState);
 
-	Memory->TransientMemoryHead = (uint8 *)Memory->TransientStorage;
+	Memory->TransientMemory.Head = (uint8 *)Memory->TransientMemory.Memory;
 
 
 	if (!Memory->IsInitialized)
 	{
-		void *TransientMemoryPointer = Memory->TransientStorage;
-
 		//TODO remove this. Add a system to open / close dev debug console
 		GameState->PrintFPS = false;
 
@@ -204,11 +203,8 @@ extern "C" GAME_LOOP(GameLoop)
 
 		GameState->TestImage = GLLoadBMP("../assets/Background.bmp");
 
-		// list_head *TestList = CreateList(Memory->TransientMemoryHead);
-		// list_link *NewLink = CreateLink(&GameState->RenderSquares, LINKTYPE_GLTEXTURE, Memory);
-		// gl_texture TestTexture = {};
-		// TestTexture.Scale = vector2{10, 10};
-		// NewLink->Data = &TestTexture;
+		GameState->RenderLayerCount
+
 
 		GameState->Player.SpeedCoeficient = 1.0f;
 		GameState->Player.BaseSpeed = 1.0f;
@@ -227,6 +223,7 @@ extern "C" GAME_LOOP(GameLoop)
 		// Entity Types
 		// 1 - Wall
 		// 2 - Enemy
+		// 3 - Wall Crawler
 
 		active_entity *Entity;
 		uint16 cellSize = 150;
@@ -238,7 +235,7 @@ extern "C" GAME_LOOP(GameLoop)
 			{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
 			{1, 2, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 2, 0, 1},
 			{1, 0, 1, 1, 0, 0, 2, 1, 0, 0, 1, 0, 2, 2, 1},
-			{1, 0, 0, 1, 1, 0, 0, 1, 0, 2, 1, 0, 2, 0, 1},
+			{1, 3, 0, 1, 1, 0, 0, 1, 0, 2, 1, 0, 2, 0, 1},
 			{1, 2, 0, 2, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1},
 			{1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 2, 1, 0, 1},
 			{1, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 1, 0, 2, 1},
@@ -249,24 +246,43 @@ extern "C" GAME_LOOP(GameLoop)
 		{
 			for (uint16 y = 0; y < GridHeight; y++)
 			{
-				if (levelGrid[y][x] == 1)
+				switch (levelGrid[y][x])
 				{
-					Entity = GetNewSingleEntity(GameState);
-					Entity->Color = COLOR_BLACK;
-					Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
-					Entity->ColliderWidth = cellSize + 1;
-					Entity->Alive = true;
-					Entity->Type = ENTITY_TYPE_WALL;
-				}
+					case 1:
+					{
+						Entity = GetNewSingleEntity(GameState);
+						Entity->Color = COLOR_BLACK;
+						Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
+						Entity->ColliderWidth = cellSize + 1;
+						Entity->Alive = true;
+						Entity->Type = ENTITY_TYPE_WALL;
 
-				if (levelGrid[y][x] == 2)
-				{
-					Entity = GetNewSingleEntity(GameState);
-					Entity->Color = COLOR_GREEN;
-					Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
-					Entity->ColliderWidth = (uint16)RandomRangeInt(10, 50, GameState);
-					Entity->Alive = true;
-					Entity->Type = ENTITY_TYPE_ENEMY;
+						break;
+					}
+
+					case 2:
+					{
+						Entity = GetNewSingleEntity(GameState);
+						Entity->Color = COLOR_GREEN;
+						Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
+						Entity->ColliderWidth = (uint16)RandomRangeInt(10, 50, &GameState->RandomGenState);
+						Entity->Alive = true;
+						Entity->Type = ENTITY_TYPE_ENEMY;
+
+						break;
+					}
+
+					case 3:
+					{
+						Entity = GetNewSingleEntity(GameState);
+						Entity->Color = COLOR_GREEN;
+						Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
+						Entity->ColliderWidth = (uint16)RandomRangeInt(10, 50, &GameState->RandomGenState);
+						Entity->Alive = true;
+						Entity->Type = ENTITY_TYPE_ENEMY;
+
+						break;
+					}
 				}
 			}
 		}
@@ -286,7 +302,7 @@ extern "C" GAME_LOOP(GameLoop)
 
 	GameState->TimeRate = 1.0f;
 
-	GameState->RenderObjects = *CreateList(Memory);
+	GameState->RenderObjects = *CreateList(&Memory->TransientMemory);
 
 	if (UseFourDirections)
 	{
@@ -403,11 +419,11 @@ extern "C" GAME_LOOP(GameLoop)
 	real32 FontSize = 0.1f;
 	if (GameState->PrevFrameFPS < 59)
 	{
-		FontRenderWord(charFPS, vector2{10, 10}, FontSize, COLOR_RED, GameState, &GameState->RenderObjects, Memory);
+		FontRenderWord(charFPS, vector2{10, 10}, FontSize, COLOR_RED, GameState, &GameState->RenderObjects, &Memory->TransientMemory);
 	}
 	else
 	{
-		FontRenderWord(charFPS, vector2{10, 10}, FontSize, COLOR_GREEN, GameState, &GameState->RenderObjects, Memory);
+		FontRenderWord(charFPS, vector2{10, 10}, FontSize, COLOR_GREEN, GameState, &GameState->RenderObjects, &Memory->TransientMemory);
 	}
 
 	for (int EntityIndex = 0;
@@ -515,7 +531,7 @@ extern "C" GAME_LOOP(GameLoop)
 
 			PushRenderSquare(&GameState->RenderObjects,
 			                 MakeSquare(EntityAbout->Position - WorldCenter, EntityAbout->ColliderWidth, EntityAbout->Color),
-			                 Memory);
+			                 &Memory->TransientMemory);
 		}
 	}
 }
@@ -524,5 +540,5 @@ extern "C" GAME_LOOP(GameLoop)
 // NOTE  Should get rid of it at some point
 extern "C" GAME_LOAD_ASSETS(GameLoadAssets)
 {
-	game_state *GameState = (game_state *)Memory->PermanentStorage;
+	game_state *GameState = (game_state *)Memory->PermanentMemory.Memory;
 }

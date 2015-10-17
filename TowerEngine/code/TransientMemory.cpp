@@ -3,10 +3,10 @@
 
 //NOTE maybe allocate is the wrong descriptor. It doesn't allocate using any os calls. It's more of an internal allocate. Which is confusing.
 void *
-AllocateTransientMemory(game_memory *Memory, uint32 Size)
+ArenaAllocate(memory_arena *Memory, uint32 Size)
 {
-	void *CurrMemoryPos = Memory->TransientMemoryHead;
-	Memory->TransientMemoryHead += Size;
+	void *CurrMemoryPos = Memory->Head;
+	Memory->Head += Size;
 	return (CurrMemoryPos);
 }
 
