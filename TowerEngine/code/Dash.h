@@ -265,8 +265,8 @@ struct game_state
 	uint32 EntityBucketCount;
 	active_entity EntityBucket[200];
 
-	list_head RenderObjects;
-	uint8 RenderLayerCount;
+	uint32 RenderLayersCount;
+	list_head RenderObjects[10];
 
 	//TODO change this to a list, first need to expand list to use given memory.
 	int32 WorldEntityCount;

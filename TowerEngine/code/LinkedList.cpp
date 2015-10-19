@@ -123,10 +123,37 @@ CreateLink(list_head *Head, link_type Type, memory_arena *Memory)
 list_link *
 CreateLink(list_head *Head, link_type Type, uint32 InsertionIndex, memory_arena *Memory)
 {
-	//NOTE holly asserts
 	Assert(InsertionIndex >= 1);
+
+	if (InsertionIndex == 1 && Head->LinkCount == 0)
+	{
+		list_link *NewLink = AllocateLink(Memory, Type);
+		Head->TopLink = NewLink;
+		Head->BottomLink = NewLink;
+
+		Head->LinkCount++;
+		return (NewLink);
+	}
+
+	if (InsertionIndex == 1)
+	{
+		list_link *NewLink = AllocateLink(Memory, Type);
+		list_link *CurrentHead = Head->TopLink;
+		Head->TopLink = NewLink;
+		Head->TopLink->NextLink = CurrentHead;
+
+		Head->LinkCount++;
+		return (NewLink);
+	}
+
 	AssertM(InsertionIndex <= Head->LinkCount, "This checks that the place asserting is valid");
 	Assert(Head->LinkCount > 0);
+
+	if (InsertionIndex == Head->LinkCount)
+	{
+		list_link *NewLink = CreateLink(Head, Type, Memory);
+		return (NewLink);
+	}
 
 	list_link *NewLink = AllocateLink(Memory, Type);
 
@@ -150,7 +177,6 @@ CreateLink(list_head *Head, link_type Type, uint32 InsertionIndex, memory_arena 
 	}
 
 	Head->LinkCount++;
-
 	return (NewLink);
 }
 

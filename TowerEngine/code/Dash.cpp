@@ -4,9 +4,20 @@ global_variable platform_read_file *PlatformReadFile;
 global_variable platform_save_state *PlatformSaveState;
 global_variable platform_load_state *PlatformLoadState;
 
-
 void
 PushRenderTexture(list_head *ListHead, gl_texture *Texture, memory_arena *Memory)
+{
+	list_link *NewLink = CreateLink(ListHead, LINKTYPE_GLTEXTURE, Memory);
+	gl_texture *TextureLinkData = (gl_texture *)NewLink->Data;
+	TextureLinkData->Image = Texture->Image;
+	TextureLinkData->Center = Texture->Center;
+	TextureLinkData->Scale = Texture->Scale;
+	TextureLinkData->Color = Texture->Color;
+	TextureLinkData->RadiansAngle = Texture->RadiansAngle;
+}
+
+void
+PushRenderTexture(list_head *ListHead, gl_texture *Texture, uint8 RenderLayer, memory_arena *Memory)
 {
 	list_link *NewLink = CreateLink(ListHead, LINKTYPE_GLTEXTURE, Memory);
 	gl_texture *TextureLinkData = (gl_texture *)NewLink->Data;
@@ -30,9 +41,9 @@ PushRenderSquare(list_head *ListHead, gl_square Square, memory_arena *Memory)
 }
 
 void
-PushRenderSquare(list_head *ListHead, gl_square Square, uint8 LayerIndex, memory_arena *Memory)
+PushRenderSquare(list_head *ListHead, gl_square Square, uint8 RenderLayer, memory_arena *Memory)
 {
-	list_link *NewLink = CreateLink(ListHead, LINKTYPE_GLSQUARE, LayerIndex, Memory);
+	list_link *NewLink = CreateLink(ListHead, LINKTYPE_GLSQUARE, Memory);
 	gl_square *SquareLinkData = (gl_square *)NewLink->Data;
 	SquareLinkData->TopLeft = Square.TopLeft;
 	SquareLinkData->TopRight = Square.TopRight;
@@ -203,8 +214,7 @@ extern "C" GAME_LOOP(GameLoop)
 
 		GameState->TestImage = GLLoadBMP("../assets/Background.bmp");
 
-		GameState->RenderLayerCount
-
+		GameState->RenderLayersCount = 10;
 
 		GameState->Player.SpeedCoeficient = 1.0f;
 		GameState->Player.BaseSpeed = 1.0f;
@@ -302,7 +312,12 @@ extern "C" GAME_LOOP(GameLoop)
 
 	GameState->TimeRate = 1.0f;
 
-	GameState->RenderObjects = *CreateList(&Memory->TransientMemory);
+	for (uint32 layerIndex = 0;
+	     layerIndex < GameState->RenderLayersCount;
+	     layerIndex++)
+	{
+		GameState->RenderObjects[layerIndex] = *CreateList(&Memory->TransientMemory);
+	}
 
 	if (UseFourDirections)
 	{
@@ -419,11 +434,11 @@ extern "C" GAME_LOOP(GameLoop)
 	real32 FontSize = 0.1f;
 	if (GameState->PrevFrameFPS < 59)
 	{
-		FontRenderWord(charFPS, vector2{10, 10}, FontSize, COLOR_RED, GameState, &GameState->RenderObjects, &Memory->TransientMemory);
+		FontRenderWord(charFPS, vector2{10, 10}, FontSize, COLOR_RED, GameState, &GameState->RenderObjects[0], &Memory->TransientMemory);
 	}
 	else
 	{
-		FontRenderWord(charFPS, vector2{10, 10}, FontSize, COLOR_GREEN, GameState, &GameState->RenderObjects, &Memory->TransientMemory);
+		FontRenderWord(charFPS, vector2{10, 10}, FontSize, COLOR_GREEN, GameState, &GameState->RenderObjects[0], &Memory->TransientMemory);
 	}
 
 	for (int EntityIndex = 0;
@@ -529,7 +544,7 @@ extern "C" GAME_LOOP(GameLoop)
 
 			EntityAbout->ForceOn = VECTOR2_ZERO;
 
-			PushRenderSquare(&GameState->RenderObjects,
+			PushRenderSquare(&GameState->RenderObjects[9],
 			                 MakeSquare(EntityAbout->Position - WorldCenter, EntityAbout->ColliderWidth, EntityAbout->Color),
 			                 &Memory->TransientMemory);
 		}
