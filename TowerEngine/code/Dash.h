@@ -192,6 +192,14 @@ struct gl_line
 	color Color;
 };
 
+struct gl_square_outline
+{
+	gl_line LeftLine;
+	gl_line RightLine;
+	gl_line BottomLine;
+	gl_line TopLine;
+};
+
 #include "LinkedList.cpp"
 
 enum entity_type
@@ -208,7 +216,8 @@ struct active_entity
 
 	real32 MovementSpeed;
 
-	loaded_image Sprite;
+	uint16 ImageWidth;
+	loaded_image *Image;
 	color Color;
 
 	uint16 ColliderWidth;
@@ -253,6 +262,9 @@ struct bmp_header
 
 struct game_state
 {
+	bool32 DrawColliderBoxes;
+	color DebugDrawColor;
+
 	uint32 RandomGenState;
 
 	player Player;
@@ -261,6 +273,7 @@ struct game_state
 	vector2 CamCenter;
 
 	loaded_image TestImage;
+	loaded_image WallCrawler;
 
 	uint32 EntityBucketCount;
 	active_entity EntityBucket[200];

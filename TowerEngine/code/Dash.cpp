@@ -4,20 +4,14 @@ global_variable platform_read_file *PlatformReadFile;
 global_variable platform_save_state *PlatformSaveState;
 global_variable platform_load_state *PlatformLoadState;
 
-void
-PushRenderTexture(list_head *ListHead, gl_texture *Texture, memory_arena *Memory)
-{
-	list_link *NewLink = CreateLink(ListHead, LINKTYPE_GLTEXTURE, Memory);
-	gl_texture *TextureLinkData = (gl_texture *)NewLink->Data;
-	TextureLinkData->Image = Texture->Image;
-	TextureLinkData->Center = Texture->Center;
-	TextureLinkData->Scale = Texture->Scale;
-	TextureLinkData->Color = Texture->Color;
-	TextureLinkData->RadiansAngle = Texture->RadiansAngle;
-}
+
+//TODO Currently entity rendering uses transient memory.
+// Would be better to allocate only once instead of creating a new render list every frame.
+
+
 
 void
-PushRenderTexture(list_head *ListHead, gl_texture *Texture, uint8 RenderLayer, memory_arena *Memory)
+PushRenderTexture(list_head *ListHead, gl_texture *Texture, memory_arena *Memory)
 {
 	list_link *NewLink = CreateLink(ListHead, LINKTYPE_GLTEXTURE, Memory);
 	gl_texture *TextureLinkData = (gl_texture *)NewLink->Data;
@@ -41,15 +35,58 @@ PushRenderSquare(list_head *ListHead, gl_square Square, memory_arena *Memory)
 }
 
 void
-PushRenderSquare(list_head *ListHead, gl_square Square, uint8 RenderLayer, memory_arena *Memory)
+PushRenderLine(list_head *ListHead, gl_line Line, memory_arena *Memory)
 {
-	list_link *NewLink = CreateLink(ListHead, LINKTYPE_GLSQUARE, Memory);
-	gl_square *SquareLinkData = (gl_square *)NewLink->Data;
-	SquareLinkData->TopLeft = Square.TopLeft;
-	SquareLinkData->TopRight = Square.TopRight;
-	SquareLinkData->BottomLeft = Square.BottomLeft;
-	SquareLinkData->BottomRight = Square.BottomRight;
-	SquareLinkData->Color = Square.Color;
+	list_link *NewLink = CreateLink(ListHead, LINKTYPE_GLLINE, Memory);
+	gl_line *LineLinkData = (gl_line *)NewLink->Data;
+
+	LineLinkData->Start = Line.Start;
+	LineLinkData->End = Line.End;
+	LineLinkData->Color = Line.Color;
+	LineLinkData->Width = Line.Width;
+}
+
+void
+PushRenderSquareOutline(list_head *ListHead, gl_square_outline SquareOutline, memory_arena *Memory)
+{
+	PushRenderLine(ListHead, SquareOutline.LeftLine, Memory);
+	PushRenderLine(ListHead, SquareOutline.RightLine, Memory);
+	PushRenderLine(ListHead, SquareOutline.TopLine, Memory);
+	PushRenderLine(ListHead, SquareOutline.BottomLine, Memory);
+}
+
+gl_line
+MakeGLLine(vector2 Start, vector2 End, color Color, real32 LineWidth)
+{
+	gl_line Line = {};
+
+	Line.Start = Start;
+	Line.End = End;
+	Line.Width = LineWidth;
+	Line.Color = Color;
+
+	return (Line);
+}
+
+gl_square_outline
+MakeSquareOutline(vector2 Pos, int32 Width, int32 Height, color Color, real32 LineWidth)
+{
+	gl_square_outline Outline = {};
+
+	//NOTE this is common, if we use this a again pull it out
+	int32 HalfWidth = Width / 2;
+	int32 HalfHeight = Height / 2;
+	vector2 TopLeft = vector2{Pos.X - HalfWidth, Pos.Y - HalfHeight};
+	vector2 TopRight = vector2{Pos.X + HalfWidth, Pos.Y - HalfHeight};
+	vector2 BottomLeft = vector2{Pos.X - HalfWidth, Pos.Y + HalfHeight};
+	vector2 BottomRight = vector2{Pos.X + HalfWidth, Pos.Y + HalfHeight};
+
+	Outline.LeftLine = MakeGLLine(TopLeft, BottomLeft, Color, LineWidth);
+	Outline.RightLine = MakeGLLine(TopRight, BottomRight, Color, LineWidth);
+	Outline.BottomLine = MakeGLLine(BottomLeft, BottomRight, Color, LineWidth);
+	Outline.TopLine = MakeGLLine(TopLeft, TopRight, Color, LineWidth);
+
+	return (Outline);
 }
 
 
@@ -213,6 +250,7 @@ extern "C" GAME_LOOP(GameLoop)
 		GameState->CamCenter = vector2{(real64)(WindowInfo->Width / 2), (real64)(WindowInfo->Height / 2)};
 
 		GameState->TestImage = GLLoadBMP("../assets/Background.bmp");
+		GameState->WallCrawler = GLLoadBMP("../assets/WallCrawler.bmp");
 
 		GameState->RenderLayersCount = 10;
 
@@ -243,9 +281,9 @@ extern "C" GAME_LOOP(GameLoop)
 		{
 			{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
 			{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-			{1, 2, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 2, 0, 1},
+			{1, 3, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 2, 0, 1},
 			{1, 0, 1, 1, 0, 0, 2, 1, 0, 0, 1, 0, 2, 2, 1},
-			{1, 3, 0, 1, 1, 0, 0, 1, 0, 2, 1, 0, 2, 0, 1},
+			{1, 0, 0, 1, 1, 0, 0, 1, 0, 2, 1, 0, 2, 0, 1},
 			{1, 2, 0, 2, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1},
 			{1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 2, 1, 0, 1},
 			{1, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 1, 0, 2, 1},
@@ -287,9 +325,11 @@ extern "C" GAME_LOOP(GameLoop)
 						Entity = GetNewSingleEntity(GameState);
 						Entity->Color = COLOR_GREEN;
 						Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
-						Entity->ColliderWidth = (uint16)RandomRangeInt(10, 50, &GameState->RandomGenState);
+						Entity->ColliderWidth = 25;
 						Entity->Alive = true;
 						Entity->Type = ENTITY_TYPE_ENEMY;
+						Entity->Image = &GameState->WallCrawler;
+						Entity->ImageWidth = 75;
 
 						break;
 					}
@@ -305,6 +345,9 @@ extern "C" GAME_LOOP(GameLoop)
 		Memory->IsInitialized = true;
 		PlatformSaveState("GameBeginningState.ts");
 	}
+
+	GameState->DrawColliderBoxes = true;
+	GameState->DebugDrawColor = COLOR_RED;
 
 	GameState->FrameCounter++;
 
@@ -434,11 +477,11 @@ extern "C" GAME_LOOP(GameLoop)
 	real32 FontSize = 0.1f;
 	if (GameState->PrevFrameFPS < 59)
 	{
-		FontRenderWord(charFPS, vector2{10, 10}, FontSize, COLOR_RED, GameState, &GameState->RenderObjects[0], &Memory->TransientMemory);
+		FontRenderWord(charFPS, vector2{15, 15}, FontSize, color{1.0f, 0.0f, 0.0f, 0.5f}, GameState, &GameState->RenderObjects[0], &Memory->TransientMemory);
 	}
 	else
 	{
-		FontRenderWord(charFPS, vector2{10, 10}, FontSize, COLOR_GREEN, GameState, &GameState->RenderObjects[0], &Memory->TransientMemory);
+		FontRenderWord(charFPS, vector2{15, 15}, FontSize, color{0.0f, 1.0f, 0.0f, 0.5f}, GameState, &GameState->RenderObjects[0], &Memory->TransientMemory);
 	}
 
 	for (int EntityIndex = 0;
@@ -544,9 +587,38 @@ extern "C" GAME_LOOP(GameLoop)
 
 			EntityAbout->ForceOn = VECTOR2_ZERO;
 
-			PushRenderSquare(&GameState->RenderObjects[9],
-			                 MakeSquare(EntityAbout->Position - WorldCenter, EntityAbout->ColliderWidth, EntityAbout->Color),
-			                 &Memory->TransientMemory);
+			if (EntityAbout->Image)
+			{
+				gl_texture SpriteTexture = {};
+				SpriteTexture.Image = EntityAbout->Image;
+				SpriteTexture.Center = EntityAbout->Position - WorldCenter;
+				SpriteTexture.Color = COLOR_WHITE;
+				SpriteTexture.Scale = vector2{(real64)(EntityAbout->ImageWidth / 2), (real64)(EntityAbout->ImageWidth / 2)};
+
+				PushRenderTexture(&GameState->RenderObjects[5], &SpriteTexture, &Memory->TransientMemory);
+
+				if (GameState->DrawColliderBoxes)
+				{
+					PushRenderSquareOutline(&GameState->RenderObjects[0],
+					                        MakeSquareOutline(EntityAbout->Position - WorldCenter, EntityAbout->ColliderWidth,
+					                                EntityAbout->ColliderWidth, GameState->DebugDrawColor, 10),
+					                        &Memory->TransientMemory);
+				}
+
+			}
+			else
+			{
+				PushRenderSquare(&GameState->RenderObjects[9],
+				                 MakeSquare(EntityAbout->Position - WorldCenter, EntityAbout->ColliderWidth, EntityAbout->Color),
+				                 &Memory->TransientMemory);
+
+				if (GameState->DrawColliderBoxes)
+				{
+					// PushRenderSquare(&GameState->RenderObjects[0],
+					//                  MakeSquare(EntityAbout->Position - WorldCenter, EntityAbout->ColliderWidth, GameState->DebugDrawColor),
+					//                  &Memory->TransientMemory);
+				}
+			}
 		}
 	}
 }

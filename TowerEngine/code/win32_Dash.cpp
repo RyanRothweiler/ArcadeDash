@@ -718,7 +718,7 @@ int32 main (int32 argc, char **argv)
 							glColor4f((GLfloat)TextureRendering->Color.R, (GLfloat)TextureRendering->Color.G,
 							          (GLfloat)TextureRendering->Color.B, (GLfloat)TextureRendering->Color.A);
 
-							real64 Radians = TextureRendering->RadiansAngle;
+							real64 Radians = 0;
 
 							vector2 RotatedPoint = {};
 							vector2 OrigPoint = {};
@@ -746,6 +746,8 @@ int32 main (int32 argc, char **argv)
 						glEnd();
 
 						glPopMatrix();
+
+						break;
 					}
 
 					case LINKTYPE_GLLINE:
@@ -758,6 +760,8 @@ int32 main (int32 argc, char **argv)
 							glVertex2d(Line->End.X, Line->End.Y);
 						}
 						glEnd();
+
+						break;
 					}
 
 					case LINKTYPE_GLSQUARE:
@@ -775,6 +779,8 @@ int32 main (int32 argc, char **argv)
 							glVertex2d(Square->BottomRight.X, Square->BottomRight.Y);
 						}
 						glEnd();
+
+						break;
 					}
 				}
 			}
