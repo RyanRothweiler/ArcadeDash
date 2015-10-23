@@ -688,6 +688,7 @@ int32 main (int32 argc, char **argv)
 
 		glClear(GL_COLOR_BUFFER_BIT);
 
+
 		for (int32 layerIndex = GameStateFromMemory->RenderLayersCount - 1;
 		     layerIndex >= 0;
 		     layerIndex--)
@@ -744,6 +745,8 @@ int32 main (int32 argc, char **argv)
 							glVertex2f((GLfloat)RotatedPoint.X, (GLfloat)RotatedPoint.Y);
 						}
 						glEnd();
+
+						glDisable(GL_TEXTURE_2D);
 
 						glPopMatrix();
 
@@ -809,10 +812,12 @@ int32 main (int32 argc, char **argv)
 		int64 FPS = PerfCountFrequency / ElapsedFrameCount;
 		char charFPS[MAX_PATH] = {};
 		ConcatIntChar(FPS, " FPS", charFPS);
+		#if 0
 		if (GameStateFromMemory->PrintFPS)
 		{
 			DebugLine(charFPS);
 		}
+		#endif
 		GameStateFromMemory->PrevFrameFPS = FPS;
 
 		PreviousFrameCount = WorkFrameCount;

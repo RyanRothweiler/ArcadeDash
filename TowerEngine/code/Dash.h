@@ -208,6 +208,18 @@ enum entity_type
 	ENTITY_TYPE_ENEMY,
 };
 
+struct active_entity;
+
+struct box_collider
+{
+	uint16 Width;
+
+	bool32 OnCollide;
+	bool32 IsColliding;
+	active_entity *CollidingWith;
+	vector2 CollideDirection;
+};
+
 struct active_entity
 {
 	vector2 ForceOn;
@@ -216,19 +228,18 @@ struct active_entity
 
 	real32 MovementSpeed;
 
+	vector2 ImageOffset;
 	uint16 ImageWidth;
 	loaded_image *Image;
 	color Color;
 
-	uint16 ColliderWidth;
-	bool32 OnCollide;
-	bool32 IsColliding;
-	active_entity *CollidingWith;
-	vector2 CollideDirection;
+	box_collider Collider;
 
 	bool32 Alive;
 	entity_type Type;
 };
+
+
 
 struct player
 {
@@ -260,11 +271,15 @@ struct bmp_header
 };
 #pragma pack(pop)
 
-struct game_state
+struct debug_settings
 {
 	bool32 DrawColliderBoxes;
-	color DebugDrawColor;
+	color DrawColor;
+	bool32 ShowFPS;
+};
 
+struct game_state
+{
 	uint32 RandomGenState;
 
 	player Player;
@@ -282,14 +297,13 @@ struct game_state
 	list_head RenderObjects[10];
 
 	//TODO change this to a list, first need to expand list to use given memory.
-	int32 WorldEntityCount;
+	uint32 WorldEntityCount;
 	active_entity *WorldEntities[300];
 
 	real64 TimeRate;
 
 	uint64 FrameCounter;
 
-	bool PrintFPS;
 	char *DebugOutput = "";
 	int64 PrevFrameFPS;
 

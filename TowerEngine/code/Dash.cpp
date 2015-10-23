@@ -5,9 +5,10 @@ global_variable platform_save_state *PlatformSaveState;
 global_variable platform_load_state *PlatformLoadState;
 
 
+global_variable debug_settings GlobalDebugSettings;
+
 //TODO Currently entity rendering uses transient memory.
 // Would be better to allocate only once instead of creating a new render list every frame.
-
 
 
 void
@@ -232,7 +233,10 @@ extern "C" GAME_LOOP(GameLoop)
 	PlatformSaveState = Memory->PlatformSaveState;
 	PlatformLoadState = Memory->PlatformLoadState;
 
-	bool32 UseFourDirections = true;
+	GlobalDebugSettings.DrawColor = COLOR_RED;
+	GlobalDebugSettings.DrawColliderBoxes = true;
+	GlobalDebugSettings.ShowFPS = true;
+
 
 	Assert(sizeof(game_state) <= Memory->PermanentMemory.Size);
 	game_state *GameState = (game_state *)Memory->PermanentMemory.Memory;
@@ -240,12 +244,8 @@ extern "C" GAME_LOOP(GameLoop)
 
 	Memory->TransientMemory.Head = (uint8 *)Memory->TransientMemory.Memory;
 
-
 	if (!Memory->IsInitialized)
 	{
-		//TODO remove this. Add a system to open / close dev debug console
-		GameState->PrintFPS = false;
-
 		GameState->WorldCenter = vector2{0, 0};
 		GameState->CamCenter = vector2{(real64)(WindowInfo->Width / 2), (real64)(WindowInfo->Height / 2)};
 
@@ -262,7 +262,7 @@ extern "C" GAME_LOOP(GameLoop)
 		GameState->Player.IsDashing = false;
 		GameState->Player.Entity.Position.X = WindowInfo->Width / 2;
 		GameState->Player.Entity.Position.Y = WindowInfo->Height / 2;
-		GameState->Player.Entity.ColliderWidth = 15;
+		GameState->Player.Entity.Collider.Width = 15;
 		GameState->Player.Entity.MovementSpeed = GameState->Player.BaseSpeed;
 		GameState->Player.Entity.Color = GameState->Player.BaseColor;
 		GameState->Player.Entity.Alive = true;
@@ -272,6 +272,11 @@ extern "C" GAME_LOOP(GameLoop)
 		// 1 - Wall
 		// 2 - Enemy
 		// 3 - Wall Crawler
+
+		//NOTE this is for level generation. This will definitely need to change.
+		uint32 CrawlerLength = 100;
+		active_entity *WallCrawlers[100] = {};
+		uint32 CrawlerListIndex = 0;
 
 		active_entity *Entity;
 		uint16 cellSize = 150;
@@ -301,7 +306,7 @@ extern "C" GAME_LOOP(GameLoop)
 						Entity = GetNewSingleEntity(GameState);
 						Entity->Color = COLOR_BLACK;
 						Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
-						Entity->ColliderWidth = cellSize + 1;
+						Entity->Collider.Width = cellSize + 1;
 						Entity->Alive = true;
 						Entity->Type = ENTITY_TYPE_WALL;
 
@@ -313,7 +318,7 @@ extern "C" GAME_LOOP(GameLoop)
 						Entity = GetNewSingleEntity(GameState);
 						Entity->Color = COLOR_GREEN;
 						Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
-						Entity->ColliderWidth = (uint16)RandomRangeInt(10, 50, &GameState->RandomGenState);
+						Entity->Collider.Width = (uint16)RandomRangeInt(10, 50, &GameState->RandomGenState);
 						Entity->Alive = true;
 						Entity->Type = ENTITY_TYPE_ENEMY;
 
@@ -325,15 +330,53 @@ extern "C" GAME_LOOP(GameLoop)
 						Entity = GetNewSingleEntity(GameState);
 						Entity->Color = COLOR_GREEN;
 						Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
-						Entity->ColliderWidth = 25;
+						Entity->ImageOffset = vector2{20, 0};
+						Entity->Collider.Width = 50;
 						Entity->Alive = true;
 						Entity->Type = ENTITY_TYPE_ENEMY;
 						Entity->Image = &GameState->WallCrawler;
 						Entity->ImageWidth = 75;
 
+						WallCrawlers[CrawlerListIndex] = Entity;
+						CrawlerListIndex++;
+
 						break;
 					}
 				}
+			}
+		}
+
+		for (uint32 CrawlerIndex = 0;
+		     CrawlerIndex < CrawlerLength;
+		     CrawlerIndex++)
+		{
+
+			active_entity *CrawlerAbout = WallCrawlers[CrawlerIndex];
+
+			if (CrawlerAbout != NULL)
+			{
+				real64 SmallestDist = 1000000;
+				active_entity *NearestEntity = {};
+
+				for (uint32 EntityIndex = 0;
+				     EntityIndex < GameState->WorldEntityCount;
+				     EntityIndex++)
+				{
+					active_entity *EntityChecking = GameState->WorldEntities[EntityIndex];
+
+					if (EntityChecking != NULL && EntityChecking != CrawlerAbout)
+					{
+						real64 NewDistance = Vector2Distance(CrawlerAbout->Position, EntityChecking->Position);
+						if (NewDistance < SmallestDist)
+						{
+							SmallestDist = NewDistance;
+							NearestEntity = EntityChecking;
+						}
+					}
+				}
+
+				//TODO find the relative direction that the crawler is to the wall, the offset it by half of each in that direction
+				CrawlerAbout->Position = NearestEntity->Position;
 			}
 		}
 
@@ -345,9 +388,6 @@ extern "C" GAME_LOOP(GameLoop)
 		Memory->IsInitialized = true;
 		PlatformSaveState("GameBeginningState.ts");
 	}
-
-	GameState->DrawColliderBoxes = true;
-	GameState->DebugDrawColor = COLOR_RED;
 
 	GameState->FrameCounter++;
 
@@ -362,32 +402,25 @@ extern "C" GAME_LOOP(GameLoop)
 		GameState->RenderObjects[layerIndex] = *CreateList(&Memory->TransientMemory);
 	}
 
-	if (UseFourDirections)
+	if (GameInput->DUp.IsDown)
 	{
-		if (GameInput->DUp.IsDown)
-		{
-			Player->MovingDirection = vector2{0, -1};
-		}
-		if (GameInput->DDown.IsDown)
-		{
-			Player->MovingDirection = vector2{0, 1};
-		}
-		if (GameInput->DRight.IsDown)
-		{
-			Player->MovingDirection = vector2{1, 0};
-		}
-		if (GameInput->DLeft.IsDown)
-		{
-			Player->MovingDirection = vector2{ -1, 0};
-		}
-		if (GameInput->YButton.IsDown)
-		{
-			Player->MovingDirection = VECTOR2_ZERO;
-		}
+		Player->MovingDirection = vector2{0, -1};
 	}
-	else
+	if (GameInput->DDown.IsDown)
 	{
-
+		Player->MovingDirection = vector2{0, 1};
+	}
+	if (GameInput->DRight.IsDown)
+	{
+		Player->MovingDirection = vector2{1, 0};
+	}
+	if (GameInput->DLeft.IsDown)
+	{
+		Player->MovingDirection = vector2{ -1, 0};
+	}
+	if (GameInput->YButton.IsDown)
+	{
+		Player->MovingDirection = VECTOR2_ZERO;
 	}
 
 	Player->Entity.MovementSpeed = Player->BaseSpeed + Player->SpeedCoeficient;
@@ -395,15 +428,19 @@ extern "C" GAME_LOOP(GameLoop)
 	{
 		Player->IsDashing = true;
 		Player->Entity.MovementSpeed += 5.0f;
-		Player->DashStartFrame = GameState->FrameCounter;
+		// Player->DashStartFrame = GameState->FrameCounter;
+	}
+	else
+	{
+		Player->IsDashing = false;
 	}
 	if (Player->IsDashing)
 	{
 		Player->Entity.Color = Player->DashColor;
-		if (Player->DashStartFrame + Player->DashFrameLength < GameState->FrameCounter)
-		{
-			Player->IsDashing = false;
-		}
+		// if (Player->DashStartFrame + Player->DashFrameLength < GameState->FrameCounter)
+		// {
+		// 	Player->IsDashing = false;
+		// }
 	}
 	else
 	{
@@ -411,7 +448,7 @@ extern "C" GAME_LOOP(GameLoop)
 	}
 	Player->Entity.ForceOn = Player->MovingDirection * Player->Entity.MovementSpeed;
 
-	if (Player->Entity.IsColliding)
+	if (Player->Entity.Collider.IsColliding)
 	{
 		if (!Player->IsDashing)
 		{
@@ -419,52 +456,52 @@ extern "C" GAME_LOOP(GameLoop)
 		}
 		else
 		{
-			if (Player->Entity.CollidingWith->Type == ENTITY_TYPE_WALL)
+			if (Player->Entity.Collider.CollidingWith->Type == ENTITY_TYPE_WALL)
 			{
 				PlayerLose();
 			}
 			else
 			{
-				Player->Entity.IsColliding = false;
-				Player->Entity.CollidingWith->Alive = false;
+				Player->Entity.Collider.IsColliding = false;
+				Player->Entity.Collider.CollidingWith->Alive = false;
 				Player->Entity.MovementSpeed -= 3.0f;
 				Player->SpeedCoeficient += 0.2f;
 			}
 		}
 	}
 
-	for (int EntityIndex = 0;
+	for (uint32 EntityIndex = 0;
 	     EntityIndex < GameState->WorldEntityCount;
 	     EntityIndex++)
 	{
 		active_entity *EntityAbout = GameState->WorldEntities[EntityIndex];
 		if (EntityAbout->Alive)
 		{
-			if (EntityAbout->IsColliding)
+			if (EntityAbout->Collider.IsColliding)
 			{
-				vector2 CollideDirection = EntityAbout->CollideDirection;
-				real64 WidthSum = (EntityAbout->ColliderWidth / 2) + (EntityAbout->CollidingWith->ColliderWidth / 2) + 0.2f;
+				vector2 CollideDirection = EntityAbout->Collider.CollideDirection;
+				real64 WidthSum = (EntityAbout->Collider.Width / 2) + (EntityAbout->Collider.CollidingWith->Collider.Width / 2) + 0.2f;
 
 				if (CollideDirection.X > 0  &&
-				    (EntityAbout->Position.X > (EntityAbout->CollidingWith->Position.X + WidthSum)) ||
-				    (EntityAbout->Position.Y > (EntityAbout->CollidingWith->Position.Y + WidthSum)) ||
-				    (EntityAbout->Position.Y < (EntityAbout->CollidingWith->Position.Y - WidthSum)))
+				    (EntityAbout->Position.X > (EntityAbout->Collider.CollidingWith->Position.X + WidthSum)) ||
+				    (EntityAbout->Position.Y > (EntityAbout->Collider.CollidingWith->Position.Y + WidthSum)) ||
+				    (EntityAbout->Position.Y < (EntityAbout->Collider.CollidingWith->Position.Y - WidthSum)))
 				{
-					EntityAbout->CollidingWith->IsColliding = false;
-					EntityAbout->IsColliding = false;
+					EntityAbout->Collider.CollidingWith->Collider.IsColliding = false;
+					EntityAbout->Collider.IsColliding = false;
 				}
 				if (CollideDirection.X < 0  &&
-				    (EntityAbout->Position.X < (EntityAbout->CollidingWith->Position.X - WidthSum)) ||
-				    (EntityAbout->Position.Y > (EntityAbout->CollidingWith->Position.Y + WidthSum)) ||
-				    (EntityAbout->Position.Y < (EntityAbout->CollidingWith->Position.Y - WidthSum)))
+				    (EntityAbout->Position.X < (EntityAbout->Collider.CollidingWith->Position.X - WidthSum)) ||
+				    (EntityAbout->Position.Y > (EntityAbout->Collider.CollidingWith->Position.Y + WidthSum)) ||
+				    (EntityAbout->Position.Y < (EntityAbout->Collider.CollidingWith->Position.Y - WidthSum)))
 				{
-					EntityAbout->CollidingWith->IsColliding = false;
-					EntityAbout->IsColliding = false;
+					EntityAbout->Collider.CollidingWith->Collider.IsColliding = false;
+					EntityAbout->Collider.IsColliding = false;
 				}
 				// NOTE I don't need to check the positive and negative y directions. I'm not quite sure why not.
 			}
 
-			EntityAbout->OnCollide = false;
+			EntityAbout->Collider.OnCollide = false;
 		}
 	}
 
@@ -484,7 +521,7 @@ extern "C" GAME_LOOP(GameLoop)
 		FontRenderWord(charFPS, vector2{15, 15}, FontSize, color{0.0f, 1.0f, 0.0f, 0.5f}, GameState, &GameState->RenderObjects[0], &Memory->TransientMemory);
 	}
 
-	for (int EntityIndex = 0;
+	for (uint32 EntityIndex = 0;
 	     EntityIndex < GameState->WorldEntityCount;
 	     EntityIndex++)
 	{
@@ -498,23 +535,23 @@ extern "C" GAME_LOOP(GameLoop)
 			bool32 CollisionDetected = false;
 			active_entity *EntityHit = {};
 
-			for (int EntityCheckingCollision = 0;
+			for (uint32 EntityCheckingCollision = 0;
 			     EntityCheckingCollision < GameState->WorldEntityCount;
 			     EntityCheckingCollision++)
 			{
 				if (GameState->WorldEntities[EntityCheckingCollision] != EntityAbout &&
 				    GameState->WorldEntities[EntityCheckingCollision]->Alive)
 				{
-					real64 WidthAdding = EntityAbout->ColliderWidth;
+					real64 WidthAdding = EntityAbout->Collider.Width;
 					vector2 EntityTopLeft =
 					{
-						GameState->WorldEntities[EntityCheckingCollision]->Position.X - ((GameState->WorldEntities[EntityCheckingCollision]->ColliderWidth + WidthAdding) / 2),
-						GameState->WorldEntities[EntityCheckingCollision]->Position.Y - ((GameState->WorldEntities[EntityCheckingCollision]->ColliderWidth + WidthAdding) / 2)
+						GameState->WorldEntities[EntityCheckingCollision]->Position.X - ((GameState->WorldEntities[EntityCheckingCollision]->Collider.Width + WidthAdding) / 2),
+						GameState->WorldEntities[EntityCheckingCollision]->Position.Y - ((GameState->WorldEntities[EntityCheckingCollision]->Collider.Width + WidthAdding) / 2)
 					};
 					vector2 EntityBottomRight =
 					{
-						GameState->WorldEntities[EntityCheckingCollision]->Position.X + ((GameState->WorldEntities[EntityCheckingCollision]->ColliderWidth + WidthAdding) / 2),
-						GameState->WorldEntities[EntityCheckingCollision]->Position.Y + ((GameState->WorldEntities[EntityCheckingCollision]->ColliderWidth + WidthAdding) / 2)
+						GameState->WorldEntities[EntityCheckingCollision]->Position.X + ((GameState->WorldEntities[EntityCheckingCollision]->Collider.Width + WidthAdding) / 2),
+						GameState->WorldEntities[EntityCheckingCollision]->Position.Y + ((GameState->WorldEntities[EntityCheckingCollision]->Collider.Width + WidthAdding) / 2)
 					};
 
 					if (NewTestPos.X > EntityTopLeft.X &&
@@ -535,23 +572,23 @@ extern "C" GAME_LOOP(GameLoop)
 			}
 			else
 			{
-				if (!EntityAbout->IsColliding)
+				if (!EntityAbout->Collider.IsColliding)
 				{
-					EntityAbout->OnCollide = true;
+					EntityAbout->Collider.OnCollide = true;
 				}
-				if (!EntityHit->IsColliding)
+				if (!EntityHit->Collider.IsColliding)
 				{
-					EntityHit->OnCollide = true;
+					EntityHit->Collider.OnCollide = true;
 				}
 
-				EntityHit->IsColliding = true;
-				EntityHit->CollidingWith = EntityAbout;
-				EntityAbout->IsColliding = true;
-				EntityAbout->CollidingWith = EntityHit;
+				EntityHit->Collider.IsColliding = true;
+				EntityHit->Collider.CollidingWith = EntityAbout;
+				EntityAbout->Collider.IsColliding = true;
+				EntityAbout->Collider.CollidingWith = EntityHit;
 
 				EntityHit->ForceOn = EntityHit->ForceOn + EntityAbout->ForceOn;
 
-				real64 WidthSum = (EntityHit->ColliderWidth / 2) + (EntityAbout->ColliderWidth / 2);
+				real64 WidthSum = (EntityHit->Collider.Width / 2) + (EntityAbout->Collider.Width / 2);
 
 				vector2 NewPos = NewTestPos;
 				vector2 NewVelocity = (Acceleration * 0.9f) + EntityAbout->Velocity;
@@ -560,25 +597,25 @@ extern "C" GAME_LOOP(GameLoop)
 				{
 					NewVelocity.X = 0;
 					NewPos.X = EntityHit->Position.X + WidthSum + 0.1f;
-					EntityAbout->CollideDirection = vector2{1, 0};
+					EntityAbout->Collider.CollideDirection = vector2{1, 0};
 				}
 				if (EntityAbout->Position.X < (EntityHit->Position.X - WidthSum))
 				{
 					NewVelocity.X = 0;
 					NewPos.X = EntityHit->Position.X - WidthSum - 0.1f;
-					EntityAbout->CollideDirection = vector2{ -1, 0};
+					EntityAbout->Collider.CollideDirection = vector2{ -1, 0};
 				}
 				if (EntityAbout->Position.Y > (EntityHit->Position.Y + WidthSum))
 				{
 					NewVelocity.Y = 0;
 					NewPos.Y = EntityHit->Position.Y + WidthSum + 0.1f;
-					EntityAbout->CollideDirection = vector2{0, 1};
+					EntityAbout->Collider.CollideDirection = vector2{0, 1};
 				}
 				if (EntityAbout->Position.Y < (EntityHit->Position.Y - WidthSum))
 				{
 					NewVelocity.Y = 0;
 					NewPos.Y = EntityHit->Position.Y - WidthSum - 0.1f;
-					EntityAbout->CollideDirection = vector2{0, -1};
+					EntityAbout->Collider.CollideDirection = vector2{0, -1};
 				}
 
 				// EntityAbout->Position = NewPos;
@@ -591,17 +628,17 @@ extern "C" GAME_LOOP(GameLoop)
 			{
 				gl_texture SpriteTexture = {};
 				SpriteTexture.Image = EntityAbout->Image;
-				SpriteTexture.Center = EntityAbout->Position - WorldCenter;
+				SpriteTexture.Center = (EntityAbout->Position + EntityAbout->ImageOffset) - WorldCenter;
 				SpriteTexture.Color = COLOR_WHITE;
 				SpriteTexture.Scale = vector2{(real64)(EntityAbout->ImageWidth / 2), (real64)(EntityAbout->ImageWidth / 2)};
 
 				PushRenderTexture(&GameState->RenderObjects[5], &SpriteTexture, &Memory->TransientMemory);
 
-				if (GameState->DrawColliderBoxes)
+				if (GlobalDebugSettings.DrawColliderBoxes)
 				{
 					PushRenderSquareOutline(&GameState->RenderObjects[0],
-					                        MakeSquareOutline(EntityAbout->Position - WorldCenter, EntityAbout->ColliderWidth,
-					                                EntityAbout->ColliderWidth, GameState->DebugDrawColor, 10),
+					                        MakeSquareOutline(EntityAbout->Position - WorldCenter, EntityAbout->Collider.Width,
+					                                EntityAbout->Collider.Width, GlobalDebugSettings.DrawColor, 10),
 					                        &Memory->TransientMemory);
 				}
 
@@ -609,14 +646,15 @@ extern "C" GAME_LOOP(GameLoop)
 			else
 			{
 				PushRenderSquare(&GameState->RenderObjects[9],
-				                 MakeSquare(EntityAbout->Position - WorldCenter, EntityAbout->ColliderWidth, EntityAbout->Color),
+				                 MakeSquare(EntityAbout->Position - WorldCenter, EntityAbout->Collider.Width, EntityAbout->Color),
 				                 &Memory->TransientMemory);
 
-				if (GameState->DrawColliderBoxes)
+				if (GlobalDebugSettings.DrawColliderBoxes)
 				{
-					// PushRenderSquare(&GameState->RenderObjects[0],
-					//                  MakeSquare(EntityAbout->Position - WorldCenter, EntityAbout->ColliderWidth, GameState->DebugDrawColor),
-					//                  &Memory->TransientMemory);
+					PushRenderSquareOutline(&GameState->RenderObjects[0],
+					                        MakeSquareOutline(EntityAbout->Position - WorldCenter, EntityAbout->Collider.Width,
+					                                EntityAbout->Collider.Width, GlobalDebugSettings.DrawColor, 10),
+					                        &Memory->TransientMemory);
 				}
 			}
 		}
