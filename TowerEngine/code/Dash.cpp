@@ -4,8 +4,26 @@ global_variable platform_read_file *PlatformReadFile;
 global_variable platform_save_state *PlatformSaveState;
 global_variable platform_load_state *PlatformLoadState;
 
-
 global_variable debug_settings GlobalDebugSettings;
+
+//TODO remove this global
+// Entity Types
+// 1 - Wall
+// 2 - Enemy
+// 3 - Wall Crawler
+global_variable uint16 GlobalLevelData[10][15] =
+{
+	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+	{1, 3, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 2, 3, 1},
+	{1, 0, 0, 0, 0, 0, 2, 1, 0, 0, 1, 0, 2, 2, 1},
+	{1, 0, 3, 1, 1, 0, 0, 1, 0, 2, 1, 0, 2, 0, 1},
+	{1, 2, 0, 2, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1},
+	{1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 2, 1, 0, 1},
+	{1, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 1, 0, 2, 1},
+	{1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1},
+	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+};
 
 //TODO Currently entity rendering uses transient memory.
 // Would be better to allocate only once instead of creating a new render list every frame.
@@ -174,6 +192,28 @@ GetNewSingleEntity(game_state *GameState)
 	return (Result);
 }
 
+void
+PushWallCrawler(game_state *GameState, active_entity *ActiveEntity)
+{
+	GameState->WallCrawlers[GameState->WallCrawlersCount] = ActiveEntity;
+	GameState->WallCrawlersCount++;
+}
+
+void
+RotateEntity(active_entity *Entity, real64 RotationRadians)
+{
+	Entity->RotationRadians = RotationRadians;
+
+	vector2 PointRotating = Entity->ForwardDirection;
+
+	real64 S = sin(RotationRadians);
+	real64 C = cos(RotationRadians);
+	PointRotating.X = (PointRotating.X * C) - (PointRotating.Y * S);
+	PointRotating.Y = (PointRotating.X * S) + (PointRotating.Y * C);
+
+	Entity->ForwardDirection = PointRotating;
+}
+
 //TODO make this save the data in some given memory
 loaded_image
 GLLoadBMP(char *FilePath)
@@ -250,7 +290,7 @@ extern "C" GAME_LOOP(GameLoop)
 		GameState->CamCenter = vector2{(real64)(WindowInfo->Width / 2), (real64)(WindowInfo->Height / 2)};
 
 		GameState->TestImage = GLLoadBMP("../assets/Background.bmp");
-		GameState->WallCrawler = GLLoadBMP("../assets/WallCrawler.bmp");
+		GameState->WallCrawlerImage = GLLoadBMP("../assets/WallCrawler.bmp");
 
 		GameState->RenderLayersCount = 10;
 
@@ -268,47 +308,28 @@ extern "C" GAME_LOOP(GameLoop)
 		GameState->Player.Entity.Alive = true;
 		AddWorldEntity(GameState, &GameState->Player.Entity);
 
-		// Entity Types
-		// 1 - Wall
-		// 2 - Enemy
-		// 3 - Wall Crawler
-
-		//NOTE this is for level generation. This will definitely need to change.
-		uint32 CrawlerLength = 100;
-		active_entity *WallCrawlers[100] = {};
-		uint32 CrawlerListIndex = 0;
+		GameState->WallCrawlersCount = 0;
 
 		active_entity *Entity;
-		uint16 cellSize = 150;
-		const uint16 GridWidth = 15;
-		const uint16 GridHeight = 10;
-		uint16 levelGrid[GridHeight][GridWidth] =
+		GameState->LevelGrid.CellSize = 150;
+		GameState->LevelGrid.Width = 15;
+		GameState->LevelGrid.Height = 10;
+
+		uint16 CellSize = GameState->LevelGrid.CellSize;
+		for (uint16 x = 0; x < GameState->LevelGrid.Width; x++)
 		{
-			{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-			{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-			{1, 3, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 2, 0, 1},
-			{1, 0, 1, 1, 0, 0, 2, 1, 0, 0, 1, 0, 2, 2, 1},
-			{1, 0, 0, 1, 1, 0, 0, 1, 0, 2, 1, 0, 2, 0, 1},
-			{1, 2, 0, 2, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1},
-			{1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 2, 1, 0, 1},
-			{1, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 1, 0, 2, 1},
-			{1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1},
-			{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-		};
-		for (uint16 x = 0; x < GridWidth; x++)
-		{
-			for (uint16 y = 0; y < GridHeight; y++)
+			for (uint16 y = 0; y < GameState->LevelGrid.Height; y++)
 			{
-				switch (levelGrid[y][x])
+				switch (GlobalLevelData[y][x])
 				{
 					case 1:
 					{
 						Entity = GetNewSingleEntity(GameState);
 						Entity->Color = COLOR_BLACK;
-						Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
-						Entity->Collider.Width = cellSize + 1;
+						Entity->Position = vector2{(real64)(x * CellSize), (real64)(y * CellSize)};
+						Entity->Collider.Width = CellSize + 1;
 						Entity->Alive = true;
-						Entity->Type = ENTITY_TYPE_WALL;
+						Entity->Type = EntityTypeWall;
 
 						break;
 					}
@@ -317,10 +338,10 @@ extern "C" GAME_LOOP(GameLoop)
 					{
 						Entity = GetNewSingleEntity(GameState);
 						Entity->Color = COLOR_GREEN;
-						Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
+						Entity->Position = vector2{(real64)(x * CellSize), (real64)(y * CellSize)};
 						Entity->Collider.Width = (uint16)RandomRangeInt(10, 50, &GameState->RandomGenState);
 						Entity->Alive = true;
-						Entity->Type = ENTITY_TYPE_ENEMY;
+						Entity->Type = EntityTypeEnemy;
 
 						break;
 					}
@@ -329,16 +350,16 @@ extern "C" GAME_LOOP(GameLoop)
 					{
 						Entity = GetNewSingleEntity(GameState);
 						Entity->Color = COLOR_GREEN;
-						Entity->Position = vector2{(real64)(x * cellSize), (real64)(y * cellSize)};
+						Entity->Position = vector2{(real64)(x * CellSize), (real64)(y * CellSize)};
+						Entity->ForwardDirection = vector2{1, 0};
 						Entity->ImageOffset = vector2{20, 0};
 						Entity->Collider.Width = 50;
 						Entity->Alive = true;
-						Entity->Type = ENTITY_TYPE_ENEMY;
-						Entity->Image = &GameState->WallCrawler;
-						Entity->ImageWidth = 75;
+						Entity->Type = EntityTypeEnemy;
+						Entity->Image = &GameState->WallCrawlerImage;
+						Entity->ImageWidth = 90;
 
-						WallCrawlers[CrawlerListIndex] = Entity;
-						CrawlerListIndex++;
+						PushWallCrawler(GameState, Entity);
 
 						break;
 					}
@@ -347,11 +368,11 @@ extern "C" GAME_LOOP(GameLoop)
 		}
 
 		for (uint32 CrawlerIndex = 0;
-		     CrawlerIndex < CrawlerLength;
+		     CrawlerIndex < GameState->WallCrawlersCount;
 		     CrawlerIndex++)
 		{
 
-			active_entity *CrawlerAbout = WallCrawlers[CrawlerIndex];
+			active_entity *CrawlerAbout = GameState->WallCrawlers[CrawlerIndex];
 
 			if (CrawlerAbout != NULL)
 			{
@@ -364,7 +385,9 @@ extern "C" GAME_LOOP(GameLoop)
 				{
 					active_entity *EntityChecking = GameState->WorldEntities[EntityIndex];
 
-					if (EntityChecking != NULL && EntityChecking != CrawlerAbout)
+					if (EntityChecking != NULL &&
+					    EntityChecking != CrawlerAbout &&
+					    EntityChecking->Type == EntityTypeWall)
 					{
 						real64 NewDistance = Vector2Distance(CrawlerAbout->Position, EntityChecking->Position);
 						if (NewDistance < SmallestDist)
@@ -376,7 +399,17 @@ extern "C" GAME_LOOP(GameLoop)
 				}
 
 				//TODO find the relative direction that the crawler is to the wall, the offset it by half of each in that direction
-				CrawlerAbout->Position = NearestEntity->Position;
+				real64 WidthSum = (CrawlerAbout->Collider.Width / 2) + (NearestEntity->Collider.Width / 2);
+				vector2 CardinalRelDir = Vector2GetCardinalDirection(CrawlerAbout->Position, NearestEntity->Position, (uint32)WidthSum);
+				if (CardinalRelDir.X > 0)
+				{
+					CrawlerAbout->Position = NearestEntity->Position + vector2{WidthSum, 0};
+				}
+				if (CardinalRelDir.X < 0)
+				{
+					CrawlerAbout->Position = NearestEntity->Position + vector2{ -WidthSum, 0};
+					RotateEntity(CrawlerAbout, PI);
+				}
 			}
 		}
 
@@ -456,7 +489,7 @@ extern "C" GAME_LOOP(GameLoop)
 		}
 		else
 		{
-			if (Player->Entity.Collider.CollidingWith->Type == ENTITY_TYPE_WALL)
+			if (Player->Entity.Collider.CollidingWith->Type == EntityTypeWall)
 			{
 				PlayerLose();
 			}
@@ -588,38 +621,43 @@ extern "C" GAME_LOOP(GameLoop)
 
 				EntityHit->ForceOn = EntityHit->ForceOn + EntityAbout->ForceOn;
 
-				real64 WidthSum = (EntityHit->Collider.Width / 2) + (EntityAbout->Collider.Width / 2);
+				uint32 WidthSum = (EntityHit->Collider.Width / 2) + (EntityAbout->Collider.Width / 2);
 
 				vector2 NewPos = NewTestPos;
 				vector2 NewVelocity = (Acceleration * 0.9f) + EntityAbout->Velocity;
 
-				if (EntityAbout->Position.X > (EntityHit->Position.X + WidthSum))
+				vector2 CardinalRelDir = Vector2GetCardinalDirection(EntityAbout->Position, EntityHit->Position, WidthSum);
+				EntityAbout->Collider.CollideDirection = CardinalRelDir;
+
+				//NOTE this is used for more advanced collision detection, doesn't work but the concept is there
+				#if 0
+				if (CardinalRelDir.X == 1)
 				{
 					NewVelocity.X = 0;
 					NewPos.X = EntityHit->Position.X + WidthSum + 0.1f;
-					EntityAbout->Collider.CollideDirection = vector2{1, 0};
 				}
-				if (EntityAbout->Position.X < (EntityHit->Position.X - WidthSum))
+				if (CardinalRelDir.X == -1)
 				{
 					NewVelocity.X = 0;
 					NewPos.X = EntityHit->Position.X - WidthSum - 0.1f;
 					EntityAbout->Collider.CollideDirection = vector2{ -1, 0};
 				}
-				if (EntityAbout->Position.Y > (EntityHit->Position.Y + WidthSum))
+				if (CardinalRelDir.Y == 1)
 				{
 					NewVelocity.Y = 0;
 					NewPos.Y = EntityHit->Position.Y + WidthSum + 0.1f;
 					EntityAbout->Collider.CollideDirection = vector2{0, 1};
 				}
-				if (EntityAbout->Position.Y < (EntityHit->Position.Y - WidthSum))
+				if (CardinalRelDir.Y == -1)
 				{
 					NewVelocity.Y = 0;
 					NewPos.Y = EntityHit->Position.Y - WidthSum - 0.1f;
 					EntityAbout->Collider.CollideDirection = vector2{0, -1};
 				}
 
-				// EntityAbout->Position = NewPos;
-				// EntityAbout->Velocity = NewVelocity;
+				EntityAbout->Position = NewPos;
+				EntityAbout->Velocity = NewVelocity;
+				#endif
 			}
 
 			EntityAbout->ForceOn = VECTOR2_ZERO;
@@ -628,9 +666,11 @@ extern "C" GAME_LOOP(GameLoop)
 			{
 				gl_texture SpriteTexture = {};
 				SpriteTexture.Image = EntityAbout->Image;
-				SpriteTexture.Center = (EntityAbout->Position + EntityAbout->ImageOffset) - WorldCenter;
+				SpriteTexture.Center = (EntityAbout->Position + (EntityAbout->ImageOffset * EntityAbout->ForwardDirection)) - WorldCenter;
 				SpriteTexture.Color = COLOR_WHITE;
 				SpriteTexture.Scale = vector2{(real64)(EntityAbout->ImageWidth / 2), (real64)(EntityAbout->ImageWidth / 2)};
+
+				SpriteTexture.RadiansAngle = EntityAbout->RotationRadians;
 
 				PushRenderTexture(&GameState->RenderObjects[5], &SpriteTexture, &Memory->TransientMemory);
 

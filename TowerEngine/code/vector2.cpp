@@ -166,6 +166,30 @@ Vector2RotatePoint(vector2 OriginalPoint, vector2 Center, real64 Angle)
 	return (Result);
 }
 
+//NOTE starting as Base, this returns the cardinal direction you would need to move to get to To
+vector2
+Vector2GetCardinalDirection(vector2 Base, vector2 To, uint32 WidthSum)
+{
+	if (Base.X > (To.X + WidthSum))
+	{
+		return (vector2{1, 0});
+	}
+	if (Base.X < (To.X - WidthSum))
+	{
+		return (vector2{ -1, 0});
+	}
+	if (Base.Y > (To.Y + WidthSum))
+	{
+		return (vector2{0, 1});
+	}
+	if (Base.Y < (To.Y - WidthSum))
+	{
+		return (vector2{0, -1});
+	}
+
+	return (vector2{0, 0});
+}
+
 const vector2 VECTOR2_ZERO = vector2{0, 0};
 
 #endif

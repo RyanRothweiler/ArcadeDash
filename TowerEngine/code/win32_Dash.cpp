@@ -719,7 +719,7 @@ int32 main (int32 argc, char **argv)
 							glColor4f((GLfloat)TextureRendering->Color.R, (GLfloat)TextureRendering->Color.G,
 							          (GLfloat)TextureRendering->Color.B, (GLfloat)TextureRendering->Color.A);
 
-							real64 Radians = 0;
+							real64 Radians = TextureRendering->RadiansAngle;
 
 							vector2 RotatedPoint = {};
 							vector2 OrigPoint = {};

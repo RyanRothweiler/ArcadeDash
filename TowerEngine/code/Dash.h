@@ -204,8 +204,8 @@ struct gl_square_outline
 
 enum entity_type
 {
-	ENTITY_TYPE_WALL,
-	ENTITY_TYPE_ENEMY,
+	EntityTypeWall,
+	EntityTypeEnemy,
 };
 
 struct active_entity;
@@ -220,6 +220,14 @@ struct box_collider
 	vector2 CollideDirection;
 };
 
+//TODO use this
+struct wall_crawler
+{
+	vector2 ForwardDirection;
+	vector2 ImageOffset;
+	vector2 CurrentGridPos;
+};
+
 struct active_entity
 {
 	vector2 ForceOn;
@@ -228,8 +236,10 @@ struct active_entity
 
 	real32 MovementSpeed;
 
+	vector2 ForwardDirection;
 	vector2 ImageOffset;
 	uint16 ImageWidth;
+	real64 RotationRadians;
 	loaded_image *Image;
 	color Color;
 
@@ -238,8 +248,6 @@ struct active_entity
 	bool32 Alive;
 	entity_type Type;
 };
-
-
 
 struct player
 {
@@ -278,9 +286,18 @@ struct debug_settings
 	bool32 ShowFPS;
 };
 
+struct level_grid
+{
+	uint16 CellSize;
+	uint32 Width;
+	uint32 Height;
+};
+
 struct game_state
 {
 	uint32 RandomGenState;
+
+	level_grid LevelGrid;
 
 	player Player;
 
@@ -288,13 +305,16 @@ struct game_state
 	vector2 CamCenter;
 
 	loaded_image TestImage;
-	loaded_image WallCrawler;
+	loaded_image WallCrawlerImage;
 
 	uint32 EntityBucketCount;
 	active_entity EntityBucket[200];
 
 	uint32 RenderLayersCount;
 	list_head RenderObjects[10];
+
+	uint32 WallCrawlersCount;
+	active_entity *WallCrawlers[300];
 
 	//TODO change this to a list, first need to expand list to use given memory.
 	uint32 WorldEntityCount;
