@@ -158,11 +158,11 @@ Vector2GetDimension(uint8 Dimension, vector2 Vector)
 }
 
 vector2
-Vector2RotatePoint(vector2 OriginalPoint, vector2 Center, real64 Angle)
+Vector2RotatePoint(vector2 OriginalPoint, vector2 Center, real64 AngleRadians)
 {
 	vector2 Result = {};
-	Result.X = Center.X + ((OriginalPoint.X - Center.X) * cos(Angle)) + ((OriginalPoint.Y - Center.Y) * sin(Angle));
-	Result.Y = Center.Y - ((OriginalPoint.X - Center.X) * sin(Angle)) + ((OriginalPoint.Y - Center.Y) * cos(Angle));
+	Result.X = Center.X + ((OriginalPoint.X - Center.X) * cos(AngleRadians)) + ((OriginalPoint.Y - Center.Y) * sin(AngleRadians));
+	Result.Y = Center.Y - ((OriginalPoint.X - Center.X) * sin(AngleRadians)) + ((OriginalPoint.Y - Center.Y) * cos(AngleRadians));
 	return (Result);
 }
 

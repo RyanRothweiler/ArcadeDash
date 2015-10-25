@@ -700,7 +700,7 @@ int32 main (int32 argc, char **argv)
 				list_link *LinkRendering = GetLink(&GameStateFromMemory->RenderObjects[layerIndex], RenderIndex);
 				switch (LinkRendering->DataType)
 				{
-					case LINKTYPE_GLTEXTURE:
+					case LinkTypeGLTexture:
 					{
 						glPushMatrix();
 
@@ -753,7 +753,7 @@ int32 main (int32 argc, char **argv)
 						break;
 					}
 
-					case LINKTYPE_GLLINE:
+					case LinkTypeGLLine:
 					{
 						gl_line *Line = (gl_line *)LinkRendering->Data;
 						glColor4f((GLfloat)Line->Color.R, (GLfloat)Line->Color.G, (GLfloat)Line->Color.B, (GLfloat)Line->Color.A);
@@ -767,7 +767,7 @@ int32 main (int32 argc, char **argv)
 						break;
 					}
 
-					case LINKTYPE_GLSQUARE:
+					case LinkTypeGLSquare:
 					{
 						glBindTexture(GL_TEXTURE_2D, 0);
 						glBegin(GL_QUADS);

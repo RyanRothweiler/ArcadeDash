@@ -1,11 +1,12 @@
 
 
  ☐ reinitialize the game when hotloading. So I can test initialization code easily.
+ ☐ 
+ ☐ image coloring. multipley color by gl_texture color in platform layer when rendering.
 
 
 
 Game Notes:
- ☐ remove the slight slide when changing directions. Needs to be instant.
 
 
 Engine Notes:
@@ -17,6 +18,7 @@ Engine Notes:
 
 ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿
 Archive:
+ ✔ remove the slight slide when changing directions. Needs to be instant. @done (15-10-24 15:59) @project(Game Notes)
  ✔ finish render layer code @done (15-10-18 20:38)
   ((LayerCount - Layer to insert) / LayerCount) * ListSize = Index to insert in.
  ✔ finish linked list rendering @done (15-10-15 20:14)

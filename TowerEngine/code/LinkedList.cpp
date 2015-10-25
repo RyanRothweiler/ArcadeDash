@@ -6,9 +6,11 @@
 //NOTE when adding a new link type make sure and add it's size to the switch statement in CreateLink
 enum link_type
 {
-	LINKTYPE_GLTEXTURE,
-	LINKTYPE_GLSQUARE,
-	LINKTYPE_GLLINE,
+	LinkTypeGLTexture,
+	LinkTypeGLSquare,
+	LinkTypeGLLine,
+	LinkTypeEntity,
+	LinkTypeWallCrawler,
 };
 
 struct list_link
@@ -76,20 +78,29 @@ AllocateLink(memory_arena *Memory, link_type Type)
 	uint32 DataSize = 0;
 	switch (Type)
 	{
-		case LINKTYPE_GLTEXTURE:
+		case LinkTypeGLTexture:
 		{
 			DataSize = sizeof(gl_texture);
 			break;
 		}
-		case LINKTYPE_GLSQUARE:
+		case LinkTypeGLSquare:
 		{
 			DataSize = sizeof(gl_square);
 			break;
 		}
-		case LINKTYPE_GLLINE:
+		case LinkTypeGLLine:
 		{
 			DataSize = sizeof(gl_line);
 			break;
+		}
+		case LinkTypeEntity:
+		{
+			DataSize = sizeof(active_entity);
+			break;
+		}
+		case LinkTypeWallCrawler:
+		{
+			DataSize = sizeof(wall_crawler);
 		}
 	}
 
@@ -120,6 +131,7 @@ CreateLink(list_head *Head, link_type Type, memory_arena *Memory)
 	return (NewLink);
 }
 
+//TODO look over this and clean it up. It looks messy
 list_link *
 CreateLink(list_head *Head, link_type Type, uint32 InsertionIndex, memory_arena *Memory)
 {
@@ -178,6 +190,93 @@ CreateLink(list_head *Head, link_type Type, uint32 InsertionIndex, memory_arena 
 
 	Head->LinkCount++;
 	return (NewLink);
+}
+
+void
+RemoveLink(list_head *Head, uint32 IndexRemoving)
+{
+	Assert(IndexRemoving >= 1);
+
+	if (IndexRemoving == 1)
+	{
+		//TODO free this link
+		list_link *LinkRemoving = Head->TopLink;
+		Head->TopLink = Head->TopLink->NextLink;
+		Head->LinkCount--;
+		return;
+	}
+
+	uint32 CurrentLinkIndex = 2;
+	list_link *CurrentLink = Head->TopLink;
+
+	while (CurrentLink->NextLink)
+	{
+		if (IndexRemoving == CurrentLinkIndex)
+		{
+			//TODO free this link
+			list_link *LinkRemoving = CurrentLink->NextLink;
+
+			if (LinkRemoving->NextLink == NULL)
+			{
+				CurrentLink->NextLink = NULL;
+			}
+			else
+			{
+				CurrentLink->NextLink = CurrentLink->NextLink->NextLink;
+			}
+
+			Head->LinkCount--;
+			return;
+		}
+
+		CurrentLinkIndex++;
+		CurrentLink = CurrentLink->NextLink;
+	}
+}
+
+
+//NOTE this doesn't check for equivalency, only if the pointers are the same
+void
+RemoveLink(list_head *Head, void *DataRemoving)
+{
+	if (Head->TopLink->Data == DataRemoving)
+	{
+		//TODO free this link
+		list_link *LinkRemoving = Head->TopLink;
+		Head->TopLink = Head->TopLink->NextLink;
+		Head->LinkCount--;
+		return;
+	}
+
+	list_link *CurrentLink = Head->TopLink;
+	while (CurrentLink->NextLink)
+	{
+		if (CurrentLink->NextLink->Data == DataRemoving)
+		{
+			//TODO free this link
+			list_link *LinkRemoving = CurrentLink->NextLink;
+
+			if (LinkRemoving->NextLink == NULL)
+			{
+				CurrentLink->NextLink = NULL;
+			}
+			else
+			{
+				CurrentLink->NextLink = CurrentLink->NextLink->NextLink;
+			}
+
+			Head->LinkCount--;
+			return;
+		}
+
+		CurrentLink = CurrentLink->NextLink;
+	}
+}
+
+void
+RemoveLink(list_head *Head, list_link *LinkRemoving)
+{
+	RemoveLink(Head, LinkRemoving->Data);
 }
 
 #endif

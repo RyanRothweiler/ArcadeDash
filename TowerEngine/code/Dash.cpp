@@ -6,8 +6,18 @@ global_variable platform_load_state *PlatformLoadState;
 
 global_variable debug_settings GlobalDebugSettings;
 
+
+
 //TODO remove this global
+enum level_data
+{
+	LevelDataEmpty,
+	LevelDataWall,
+	LevelDataEnemy,
+	LevelDataWallCrawler
+};
 // Entity Types
+// 0 - Empty
 // 1 - Wall
 // 2 - Enemy
 // 3 - Wall Crawler
@@ -15,9 +25,9 @@ global_variable uint16 GlobalLevelData[10][15] =
 {
 	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
 	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 3, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 2, 3, 1},
+	{1, 3, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 2, 0, 1},
 	{1, 0, 0, 0, 0, 0, 2, 1, 0, 0, 1, 0, 2, 2, 1},
-	{1, 0, 3, 1, 1, 0, 0, 1, 0, 2, 1, 0, 2, 0, 1},
+	{1, 0, 0, 1, 1, 0, 0, 1, 0, 2, 1, 0, 2, 0, 1},
 	{1, 2, 0, 2, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1},
 	{1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 2, 1, 0, 1},
 	{1, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 1, 0, 2, 1},
@@ -29,10 +39,16 @@ global_variable uint16 GlobalLevelData[10][15] =
 // Would be better to allocate only once instead of creating a new render list every frame.
 
 
+inline vector2
+GridToWorldPos(vector2 GridPos, real64 CellSize)
+{
+	return (vector2{GridPos.X * CellSize, GridPos.Y * CellSize});
+}
+
 void
 PushRenderTexture(list_head *ListHead, gl_texture *Texture, memory_arena *Memory)
 {
-	list_link *NewLink = CreateLink(ListHead, LINKTYPE_GLTEXTURE, Memory);
+	list_link *NewLink = CreateLink(ListHead, LinkTypeGLTexture, Memory);
 	gl_texture *TextureLinkData = (gl_texture *)NewLink->Data;
 	TextureLinkData->Image = Texture->Image;
 	TextureLinkData->Center = Texture->Center;
@@ -44,7 +60,7 @@ PushRenderTexture(list_head *ListHead, gl_texture *Texture, memory_arena *Memory
 void
 PushRenderSquare(list_head *ListHead, gl_square Square, memory_arena *Memory)
 {
-	list_link *NewLink = CreateLink(ListHead, LINKTYPE_GLSQUARE, Memory);
+	list_link *NewLink = CreateLink(ListHead, LinkTypeGLSquare, Memory);
 	gl_square *SquareLinkData = (gl_square *)NewLink->Data;
 	SquareLinkData->TopLeft = Square.TopLeft;
 	SquareLinkData->TopRight = Square.TopRight;
@@ -56,7 +72,7 @@ PushRenderSquare(list_head *ListHead, gl_square Square, memory_arena *Memory)
 void
 PushRenderLine(list_head *ListHead, gl_line Line, memory_arena *Memory)
 {
-	list_link *NewLink = CreateLink(ListHead, LINKTYPE_GLLINE, Memory);
+	list_link *NewLink = CreateLink(ListHead, LinkTypeGLLine, Memory);
 	gl_line *LineLinkData = (gl_line *)NewLink->Data;
 
 	LineLinkData->Start = Line.Start;
@@ -170,48 +186,24 @@ RandomRangeInt(int32 Bottom, int32 Top, uint32 *RandomGenState)
 }
 
 void
-AddWorldEntity(game_state *GameState, active_entity *Entity)
-{
-	GameState->WorldEntities[GameState->WorldEntityCount] = Entity;
-	GameState->WorldEntityCount++;
-}
-
-void
 PlayerLose()
 {
 	PlatformLoadState("GameBeginningState.ts");
 }
 
 active_entity *
-GetNewSingleEntity(game_state *GameState)
+CreateNewEntity(memory_arena *Arena, list_head *WorldEntities)
 {
-	Assert(_countof(GameState->EntityBucket) > GameState->EntityBucketCount);
-	AddWorldEntity(GameState, &GameState->EntityBucket[GameState->EntityBucketCount]);
-	active_entity *Result = &GameState->EntityBucket[GameState->EntityBucketCount];
-	GameState->EntityBucketCount++;
-	return (Result);
+	active_entity *Entity = (active_entity *)(CreateLink(WorldEntities, LinkTypeEntity, Arena)->Data);
+	Entity->Dead = false;
+	return (Entity);
 }
 
 void
-PushWallCrawler(game_state *GameState, active_entity *ActiveEntity)
+RotateCrawler(wall_crawler *Crawler, real64 RotationRadians)
 {
-	GameState->WallCrawlers[GameState->WallCrawlersCount] = ActiveEntity;
-	GameState->WallCrawlersCount++;
-}
-
-void
-RotateEntity(active_entity *Entity, real64 RotationRadians)
-{
-	Entity->RotationRadians = RotationRadians;
-
-	vector2 PointRotating = Entity->ForwardDirection;
-
-	real64 S = sin(RotationRadians);
-	real64 C = cos(RotationRadians);
-	PointRotating.X = (PointRotating.X * C) - (PointRotating.Y * S);
-	PointRotating.Y = (PointRotating.X * S) + (PointRotating.Y * C);
-
-	Entity->ForwardDirection = PointRotating;
+	Crawler->Entity->RotationRadians = RotationRadians;
+	Crawler->ForwardDirection = Vector2RotatePoint(Crawler->ForwardDirection, vector2{0, 0}, RotationRadians);
 }
 
 //TODO make this save the data in some given memory
@@ -267,6 +259,25 @@ GLLoadBMP(char *FilePath)
 	return (Result);
 }
 
+inline void
+CheckGridPosDirection(vector2 WorldPos, vector2 *GridPos, vector2 Dir, real64 CellSize)
+{
+	real64 Distance = Vector2Distance(WorldPos, GridToWorldPos(*GridPos + Dir, CellSize));
+	if (Distance < CellSize / 2)
+	{
+		*GridPos = *GridPos + Dir;
+	}
+}
+
+void
+UpdateGridPos(wall_crawler *WallCrawler, real64 CellSize)
+{
+	CheckGridPosDirection(WallCrawler->Entity->Position, &WallCrawler->GridPos, vector2{ 0, 1}, CellSize);
+	CheckGridPosDirection(WallCrawler->Entity->Position, &WallCrawler->GridPos, vector2{ 0, -1}, CellSize);
+	CheckGridPosDirection(WallCrawler->Entity->Position, &WallCrawler->GridPos, vector2{ -1, 0}, CellSize);
+	CheckGridPosDirection(WallCrawler->Entity->Position, &WallCrawler->GridPos, vector2{ 1, 0}, CellSize);
+}
+
 extern "C" GAME_LOOP(GameLoop)
 {
 	PlatformReadFile = Memory->PlatformReadFile;
@@ -286,6 +297,11 @@ extern "C" GAME_LOOP(GameLoop)
 
 	if (!Memory->IsInitialized)
 	{
+		Memory->TransientMemory.EndOfMemory = (uint8 *)Memory->TransientMemory.Memory + Memory->TransientMemory.Size;
+
+		Memory->PermanentMemory.EndOfMemory = (uint8 *)Memory->PermanentMemory.Memory + Memory->PermanentMemory.Size;
+		Memory->PermanentMemory.Head = (uint8 *)Memory->PermanentMemory.Memory + sizeof(game_state);
+
 		GameState->WorldCenter = vector2{0, 0};
 		GameState->CamCenter = vector2{(real64)(WindowInfo->Width / 2), (real64)(WindowInfo->Height / 2)};
 
@@ -294,23 +310,23 @@ extern "C" GAME_LOOP(GameLoop)
 
 		GameState->RenderLayersCount = 10;
 
+		GameState->WorldEntities = CreateList(&Memory->PermanentMemory);
+		GameState->WallCrawlers = CreateList(&Memory->PermanentMemory);
+
 		GameState->Player.SpeedCoeficient = 1.0f;
-		GameState->Player.BaseSpeed = 1.0f;
+		GameState->Player.BaseSpeed = 1.5f;
 		GameState->Player.BaseColor = COLOR_BLUE;
 		GameState->Player.DashColor = COLOR_RED;
 		GameState->Player.DashFrameLength = 4;
 		GameState->Player.IsDashing = false;
-		GameState->Player.Entity.Position.X = WindowInfo->Width / 2;
-		GameState->Player.Entity.Position.Y = WindowInfo->Height / 2;
-		GameState->Player.Entity.Collider.Width = 15;
-		GameState->Player.Entity.MovementSpeed = GameState->Player.BaseSpeed;
-		GameState->Player.Entity.Color = GameState->Player.BaseColor;
-		GameState->Player.Entity.Alive = true;
-		AddWorldEntity(GameState, &GameState->Player.Entity);
+		GameState->Player.Entity = CreateNewEntity(&Memory->PermanentMemory, GameState->WorldEntities);
+		GameState->Player.Entity->Position.X = WindowInfo->Width / 2;
+		GameState->Player.Entity->Position.Y = WindowInfo->Height / 2;
+		GameState->Player.Entity->Collider.Width = 15;
+		GameState->Player.Entity->MovementSpeed = GameState->Player.BaseSpeed;
+		GameState->Player.Entity->Color = GameState->Player.BaseColor;
+		GameState->Player.Entity->Type = EntityTypePlayer;
 
-		GameState->WallCrawlersCount = 0;
-
-		active_entity *Entity;
 		GameState->LevelGrid.CellSize = 150;
 		GameState->LevelGrid.Width = 15;
 		GameState->LevelGrid.Height = 10;
@@ -322,44 +338,47 @@ extern "C" GAME_LOOP(GameLoop)
 			{
 				switch (GlobalLevelData[y][x])
 				{
-					case 1:
+					case LevelDataWall:
 					{
-						Entity = GetNewSingleEntity(GameState);
+						active_entity *Entity = CreateNewEntity(&Memory->PermanentMemory, GameState->WorldEntities);
 						Entity->Color = COLOR_BLACK;
 						Entity->Position = vector2{(real64)(x * CellSize), (real64)(y * CellSize)};
 						Entity->Collider.Width = CellSize + 1;
-						Entity->Alive = true;
 						Entity->Type = EntityTypeWall;
 
 						break;
 					}
 
-					case 2:
+					case LevelDataEnemy:
 					{
-						Entity = GetNewSingleEntity(GameState);
+						active_entity *Entity = CreateNewEntity(&Memory->PermanentMemory, GameState->WorldEntities);
 						Entity->Color = COLOR_GREEN;
 						Entity->Position = vector2{(real64)(x * CellSize), (real64)(y * CellSize)};
 						Entity->Collider.Width = (uint16)RandomRangeInt(10, 50, &GameState->RandomGenState);
-						Entity->Alive = true;
 						Entity->Type = EntityTypeEnemy;
 
 						break;
 					}
 
-					case 3:
+					case LevelDataWallCrawler:
 					{
-						Entity = GetNewSingleEntity(GameState);
+
+						wall_crawler *WallCrawler = (wall_crawler *)CreateLink(GameState->WallCrawlers, LinkTypeWallCrawler,
+						                            &Memory->PermanentMemory)->Data;
+						active_entity *Entity = CreateNewEntity(&Memory->PermanentMemory, GameState->WorldEntities);
+						WallCrawler->Entity = Entity;
+
+						WallCrawler->ForwardDirection = vector2{1, 0};
+						WallCrawler->ImageOffset = vector2{10, 10};
+						WallCrawler->GridPos = vector2{(real64)x, (real64)y};
+						WallCrawler->DirMoving = vector2{0, 1};
+
 						Entity->Color = COLOR_GREEN;
 						Entity->Position = vector2{(real64)(x * CellSize), (real64)(y * CellSize)};
-						Entity->ForwardDirection = vector2{1, 0};
-						Entity->ImageOffset = vector2{20, 0};
-						Entity->Collider.Width = 50;
-						Entity->Alive = true;
+						Entity->Collider.Width = 40;
 						Entity->Type = EntityTypeEnemy;
 						Entity->Image = &GameState->WallCrawlerImage;
-						Entity->ImageWidth = 90;
-
-						PushWallCrawler(GameState, Entity);
+						Entity->ImageWidth = 60;
 
 						break;
 					}
@@ -367,29 +386,29 @@ extern "C" GAME_LOOP(GameLoop)
 			}
 		}
 
-		for (uint32 CrawlerIndex = 0;
-		     CrawlerIndex < GameState->WallCrawlersCount;
+		for (uint32 CrawlerIndex = 1;
+		     CrawlerIndex <= GameState->WallCrawlers->LinkCount;
 		     CrawlerIndex++)
 		{
 
-			active_entity *CrawlerAbout = GameState->WallCrawlers[CrawlerIndex];
+			wall_crawler *CrawlerAbout = (wall_crawler *)GetLinkData(GameState->WallCrawlers, CrawlerIndex);
 
 			if (CrawlerAbout != NULL)
 			{
 				real64 SmallestDist = 1000000;
 				active_entity *NearestEntity = {};
 
-				for (uint32 EntityIndex = 0;
-				     EntityIndex < GameState->WorldEntityCount;
+				for (uint32 EntityIndex = 1;
+				     EntityIndex < GameState->WorldEntities->LinkCount;
 				     EntityIndex++)
 				{
-					active_entity *EntityChecking = GameState->WorldEntities[EntityIndex];
+					active_entity *EntityChecking = (active_entity *)GetLinkData(GameState->WorldEntities, EntityIndex);
 
 					if (EntityChecking != NULL &&
-					    EntityChecking != CrawlerAbout &&
+					    EntityChecking != CrawlerAbout->Entity &&
 					    EntityChecking->Type == EntityTypeWall)
 					{
-						real64 NewDistance = Vector2Distance(CrawlerAbout->Position, EntityChecking->Position);
+						real64 NewDistance = Vector2Distance(CrawlerAbout->Entity->Position, EntityChecking->Position);
 						if (NewDistance < SmallestDist)
 						{
 							SmallestDist = NewDistance;
@@ -398,17 +417,26 @@ extern "C" GAME_LOOP(GameLoop)
 					}
 				}
 
-				//TODO find the relative direction that the crawler is to the wall, the offset it by half of each in that direction
-				real64 WidthSum = (CrawlerAbout->Collider.Width / 2) + (NearestEntity->Collider.Width / 2);
-				vector2 CardinalRelDir = Vector2GetCardinalDirection(CrawlerAbout->Position, NearestEntity->Position, (uint32)WidthSum);
+				real64 WidthSum = (CrawlerAbout->Entity->Collider.Width / 2) + (NearestEntity->Collider.Width / 2);
+				vector2 CardinalRelDir = Vector2GetCardinalDirection(CrawlerAbout->Entity->Position, NearestEntity->Position, (uint32)WidthSum);
 				if (CardinalRelDir.X > 0)
 				{
-					CrawlerAbout->Position = NearestEntity->Position + vector2{WidthSum, 0};
+					CrawlerAbout->Entity->Position = NearestEntity->Position + vector2{WidthSum, 0};
 				}
 				if (CardinalRelDir.X < 0)
 				{
-					CrawlerAbout->Position = NearestEntity->Position + vector2{ -WidthSum, 0};
-					RotateEntity(CrawlerAbout, PI);
+					CrawlerAbout->Entity->Position = NearestEntity->Position + vector2{ -WidthSum, 0};
+					RotateCrawler(CrawlerAbout, PI);
+				}
+				if (CardinalRelDir.Y > 0)
+				{
+					CrawlerAbout->Entity->Position = NearestEntity->Position + vector2{0, WidthSum};
+					RotateCrawler(CrawlerAbout, -PI / 2);
+				}
+				if (CardinalRelDir.Y < 0)
+				{
+					CrawlerAbout->Entity->Position = NearestEntity->Position + vector2{0, -WidthSum};
+					RotateCrawler(CrawlerAbout, PI / 2);
 				}
 			}
 		}
@@ -456,12 +484,16 @@ extern "C" GAME_LOOP(GameLoop)
 		Player->MovingDirection = VECTOR2_ZERO;
 	}
 
-	Player->Entity.MovementSpeed = Player->BaseSpeed + Player->SpeedCoeficient;
+	Player->Entity->MovementSpeed = Player->BaseSpeed + Player->SpeedCoeficient;
 	if (GameInput->AButton.IsDown)
 	{
 		Player->IsDashing = true;
-		Player->Entity.MovementSpeed += 5.0f;
-		// Player->DashStartFrame = GameState->FrameCounter;
+		Player->Entity->MovementSpeed += 5.0f;
+
+		//NOTE this is for timed dashing
+		#if 0
+		Player->DashStartFrame = GameState->FrameCounter;
+		#endif
 	}
 	else
 	{
@@ -469,19 +501,23 @@ extern "C" GAME_LOOP(GameLoop)
 	}
 	if (Player->IsDashing)
 	{
-		Player->Entity.Color = Player->DashColor;
-		// if (Player->DashStartFrame + Player->DashFrameLength < GameState->FrameCounter)
-		// {
-		// 	Player->IsDashing = false;
-		// }
+		Player->Entity->Color = Player->DashColor;
+
+		//NOTE this is for timed dashing
+		#if 0
+		if (Player->DashStartFrame + Player->DashFrameLength < GameState->FrameCounter)
+		{
+			Player->IsDashing = false;
+		}
+		#endif
 	}
 	else
 	{
-		Player->Entity.Color = Player->BaseColor;
+		Player->Entity->Color = Player->BaseColor;
 	}
-	Player->Entity.ForceOn = Player->MovingDirection * Player->Entity.MovementSpeed;
+	Player->Entity->ForceOn = Player->MovingDirection * Player->Entity->MovementSpeed;
 
-	if (Player->Entity.Collider.IsColliding)
+	if (Player->Entity->Collider.IsColliding)
 	{
 		if (!Player->IsDashing)
 		{
@@ -489,56 +525,56 @@ extern "C" GAME_LOOP(GameLoop)
 		}
 		else
 		{
-			if (Player->Entity.Collider.CollidingWith->Type == EntityTypeWall)
+			if (Player->Entity->Collider.CollidingWith->Type == EntityTypeWall)
 			{
 				PlayerLose();
 			}
 			else
 			{
-				Player->Entity.Collider.IsColliding = false;
-				Player->Entity.Collider.CollidingWith->Alive = false;
-				Player->Entity.MovementSpeed -= 3.0f;
+				Player->Entity->Collider.IsColliding = false;
+
+				Player->Entity->Collider.CollidingWith->Dead = true;
+				RemoveLink(GameState->WorldEntities, Player->Entity->Collider.CollidingWith);
+
+				Player->Entity->MovementSpeed -= 3.0f;
 				Player->SpeedCoeficient += 0.2f;
 			}
 		}
 	}
 
-	for (uint32 EntityIndex = 0;
-	     EntityIndex < GameState->WorldEntityCount;
+	for (uint32 EntityIndex = 1;
+	     EntityIndex <= GameState->WorldEntities->LinkCount;
 	     EntityIndex++)
 	{
-		active_entity *EntityAbout = GameState->WorldEntities[EntityIndex];
-		if (EntityAbout->Alive)
+		active_entity *EntityAbout = (active_entity *)GetLinkData(GameState->WorldEntities, EntityIndex);
+		if (EntityAbout->Collider.IsColliding)
 		{
-			if (EntityAbout->Collider.IsColliding)
+			vector2 CollideDirection = EntityAbout->Collider.CollideDirection;
+			real64 WidthSum = (EntityAbout->Collider.Width / 2) + (EntityAbout->Collider.CollidingWith->Collider.Width / 2) + 0.2f;
+
+			if (CollideDirection.X > 0  &&
+			    (EntityAbout->Position.X > (EntityAbout->Collider.CollidingWith->Position.X + WidthSum)) ||
+			    (EntityAbout->Position.Y > (EntityAbout->Collider.CollidingWith->Position.Y + WidthSum)) ||
+			    (EntityAbout->Position.Y < (EntityAbout->Collider.CollidingWith->Position.Y - WidthSum)))
 			{
-				vector2 CollideDirection = EntityAbout->Collider.CollideDirection;
-				real64 WidthSum = (EntityAbout->Collider.Width / 2) + (EntityAbout->Collider.CollidingWith->Collider.Width / 2) + 0.2f;
-
-				if (CollideDirection.X > 0  &&
-				    (EntityAbout->Position.X > (EntityAbout->Collider.CollidingWith->Position.X + WidthSum)) ||
-				    (EntityAbout->Position.Y > (EntityAbout->Collider.CollidingWith->Position.Y + WidthSum)) ||
-				    (EntityAbout->Position.Y < (EntityAbout->Collider.CollidingWith->Position.Y - WidthSum)))
-				{
-					EntityAbout->Collider.CollidingWith->Collider.IsColliding = false;
-					EntityAbout->Collider.IsColliding = false;
-				}
-				if (CollideDirection.X < 0  &&
-				    (EntityAbout->Position.X < (EntityAbout->Collider.CollidingWith->Position.X - WidthSum)) ||
-				    (EntityAbout->Position.Y > (EntityAbout->Collider.CollidingWith->Position.Y + WidthSum)) ||
-				    (EntityAbout->Position.Y < (EntityAbout->Collider.CollidingWith->Position.Y - WidthSum)))
-				{
-					EntityAbout->Collider.CollidingWith->Collider.IsColliding = false;
-					EntityAbout->Collider.IsColliding = false;
-				}
-				// NOTE I don't need to check the positive and negative y directions. I'm not quite sure why not.
+				EntityAbout->Collider.CollidingWith->Collider.IsColliding = false;
+				EntityAbout->Collider.IsColliding = false;
 			}
-
-			EntityAbout->Collider.OnCollide = false;
+			if (CollideDirection.X < 0  &&
+			    (EntityAbout->Position.X < (EntityAbout->Collider.CollidingWith->Position.X - WidthSum)) ||
+			    (EntityAbout->Position.Y > (EntityAbout->Collider.CollidingWith->Position.Y + WidthSum)) ||
+			    (EntityAbout->Position.Y < (EntityAbout->Collider.CollidingWith->Position.Y - WidthSum)))
+			{
+				EntityAbout->Collider.CollidingWith->Collider.IsColliding = false;
+				EntityAbout->Collider.IsColliding = false;
+			}
+			// NOTE I don't need to check the positive and negative y directions. I'm not quite sure why not.
 		}
+
+		EntityAbout->Collider.OnCollide = false;
 	}
 
-	vector2 PlayerCamDifference = Player->Entity.Position - GameState->WorldCenter;
+	vector2 PlayerCamDifference = Player->Entity->Position - GameState->WorldCenter;
 	GameState->WorldCenter = GameState->WorldCenter + (PlayerCamDifference * 0.08f * GameState->TimeRate);
 	vector2 WorldCenter = GameState->WorldCenter - GameState->CamCenter;
 
@@ -554,150 +590,196 @@ extern "C" GAME_LOOP(GameLoop)
 		FontRenderWord(charFPS, vector2{15, 15}, FontSize, color{0.0f, 1.0f, 0.0f, 0.5f}, GameState, &GameState->RenderObjects[0], &Memory->TransientMemory);
 	}
 
-	for (uint32 EntityIndex = 0;
-	     EntityIndex < GameState->WorldEntityCount;
+
+	for (uint32 CrawlerIndex = 1;
+	     CrawlerIndex <= GameState->WallCrawlers->LinkCount;
+	     CrawlerIndex++)
+	{
+		//TODO don't need this
+		// instaed just check if collision happened with a wall
+
+
+
+		// wall_crawler *Crawler = (wall_crawler *)GetLinkData(GameState->WallCrawlers, CrawlerIndex);
+		// UpdateGridPos(Crawler, GameState->LevelGrid.CellSize);
+
+		// Crawler->Entity->Position = Crawler->Entity->Position + vector2{0, -1};
+
+	}
+
+	for (uint32 EntityIndex = 1;
+	     EntityIndex <= GameState->WorldEntities->LinkCount;
 	     EntityIndex++)
 	{
-		active_entity *EntityAbout = GameState->WorldEntities[EntityIndex];
-		if (EntityAbout->Alive)
+		active_entity *EntityAbout = (active_entity *)GetLinkData(GameState->WorldEntities, EntityIndex);
+
+		vector2 Acceleration = ((EntityAbout->ForceOn * GameState->TimeRate) + (-0.25f * EntityAbout->Velocity));
+		// NOTE these 0.9f here should actually be the previous elapsed frame time. Maybe do that at some point
+		vector2 NewTestPos = (0.5f * Acceleration * SquareInt((int64)(0.9f))) + (EntityAbout->Velocity * 0.9f) + EntityAbout->Position;
+
+		if (EntityAbout->Type == EntityTypePlayer)
 		{
-			vector2 Acceleration = ((EntityAbout->ForceOn * GameState->TimeRate) + (-0.25f * EntityAbout->Velocity));
-			// NOTE these 0.9f here should actually be the previous elapsed frame time. Maybe do that at some point
-			vector2 NewTestPos = (0.5f * Acceleration * SquareInt((int64)(0.9f))) + (EntityAbout->Velocity * 0.9f) + EntityAbout->Position;
+			NewTestPos = EntityAbout->Position + EntityAbout->ForceOn;
+		}
 
-			bool32 CollisionDetected = false;
-			active_entity *EntityHit = {};
+		bool32 CollisionDetected = false;
+		active_entity *EntityHit = {};
 
-			for (uint32 EntityCheckingCollision = 0;
-			     EntityCheckingCollision < GameState->WorldEntityCount;
-			     EntityCheckingCollision++)
+		for (uint32 EntityCheckingCollision = 1;
+		     EntityCheckingCollision <= GameState->WorldEntities->LinkCount;
+		     EntityCheckingCollision++)
+		{
+			active_entity *EntityChecking = (active_entity *)GetLinkData(GameState->WorldEntities, EntityCheckingCollision);
+			if (EntityChecking != EntityAbout)
 			{
-				if (GameState->WorldEntities[EntityCheckingCollision] != EntityAbout &&
-				    GameState->WorldEntities[EntityCheckingCollision]->Alive)
+				real64 WidthAdding = EntityAbout->Collider.Width;
+				vector2 EntityTopLeft =
 				{
-					real64 WidthAdding = EntityAbout->Collider.Width;
-					vector2 EntityTopLeft =
-					{
-						GameState->WorldEntities[EntityCheckingCollision]->Position.X - ((GameState->WorldEntities[EntityCheckingCollision]->Collider.Width + WidthAdding) / 2),
-						GameState->WorldEntities[EntityCheckingCollision]->Position.Y - ((GameState->WorldEntities[EntityCheckingCollision]->Collider.Width + WidthAdding) / 2)
-					};
-					vector2 EntityBottomRight =
-					{
-						GameState->WorldEntities[EntityCheckingCollision]->Position.X + ((GameState->WorldEntities[EntityCheckingCollision]->Collider.Width + WidthAdding) / 2),
-						GameState->WorldEntities[EntityCheckingCollision]->Position.Y + ((GameState->WorldEntities[EntityCheckingCollision]->Collider.Width + WidthAdding) / 2)
-					};
-
-					if (NewTestPos.X > EntityTopLeft.X &&
-					    NewTestPos.X < EntityBottomRight.X &&
-					    NewTestPos.Y > EntityTopLeft.Y &&
-					    NewTestPos.Y < EntityBottomRight.Y)
-					{
-						CollisionDetected = true;
-						EntityHit = GameState->WorldEntities[EntityCheckingCollision];
-					}
-				}
-			}
-
-			if (!CollisionDetected)
-			{
-				EntityAbout->Position = NewTestPos;
-				EntityAbout->Velocity = (Acceleration * 0.9f) + EntityAbout->Velocity;
-			}
-			else
-			{
-				if (!EntityAbout->Collider.IsColliding)
+					EntityChecking->Position.X - ((EntityChecking->Collider.Width + WidthAdding) / 2),
+					EntityChecking->Position.Y - ((EntityChecking->Collider.Width + WidthAdding) / 2)
+				};
+				vector2 EntityBottomRight =
 				{
-					EntityAbout->Collider.OnCollide = true;
-				}
-				if (!EntityHit->Collider.IsColliding)
+					EntityChecking->Position.X + ((EntityChecking->Collider.Width + WidthAdding) / 2),
+					EntityChecking->Position.Y + ((EntityChecking->Collider.Width + WidthAdding) / 2)
+				};
+
+				if (NewTestPos.X > EntityTopLeft.X &&
+				    NewTestPos.X < EntityBottomRight.X &&
+				    NewTestPos.Y > EntityTopLeft.Y &&
+				    NewTestPos.Y < EntityBottomRight.Y)
 				{
-					EntityHit->Collider.OnCollide = true;
-				}
-
-				EntityHit->Collider.IsColliding = true;
-				EntityHit->Collider.CollidingWith = EntityAbout;
-				EntityAbout->Collider.IsColliding = true;
-				EntityAbout->Collider.CollidingWith = EntityHit;
-
-				EntityHit->ForceOn = EntityHit->ForceOn + EntityAbout->ForceOn;
-
-				uint32 WidthSum = (EntityHit->Collider.Width / 2) + (EntityAbout->Collider.Width / 2);
-
-				vector2 NewPos = NewTestPos;
-				vector2 NewVelocity = (Acceleration * 0.9f) + EntityAbout->Velocity;
-
-				vector2 CardinalRelDir = Vector2GetCardinalDirection(EntityAbout->Position, EntityHit->Position, WidthSum);
-				EntityAbout->Collider.CollideDirection = CardinalRelDir;
-
-				//NOTE this is used for more advanced collision detection, doesn't work but the concept is there
-				#if 0
-				if (CardinalRelDir.X == 1)
-				{
-					NewVelocity.X = 0;
-					NewPos.X = EntityHit->Position.X + WidthSum + 0.1f;
-				}
-				if (CardinalRelDir.X == -1)
-				{
-					NewVelocity.X = 0;
-					NewPos.X = EntityHit->Position.X - WidthSum - 0.1f;
-					EntityAbout->Collider.CollideDirection = vector2{ -1, 0};
-				}
-				if (CardinalRelDir.Y == 1)
-				{
-					NewVelocity.Y = 0;
-					NewPos.Y = EntityHit->Position.Y + WidthSum + 0.1f;
-					EntityAbout->Collider.CollideDirection = vector2{0, 1};
-				}
-				if (CardinalRelDir.Y == -1)
-				{
-					NewVelocity.Y = 0;
-					NewPos.Y = EntityHit->Position.Y - WidthSum - 0.1f;
-					EntityAbout->Collider.CollideDirection = vector2{0, -1};
-				}
-
-				EntityAbout->Position = NewPos;
-				EntityAbout->Velocity = NewVelocity;
-				#endif
-			}
-
-			EntityAbout->ForceOn = VECTOR2_ZERO;
-
-			if (EntityAbout->Image)
-			{
-				gl_texture SpriteTexture = {};
-				SpriteTexture.Image = EntityAbout->Image;
-				SpriteTexture.Center = (EntityAbout->Position + (EntityAbout->ImageOffset * EntityAbout->ForwardDirection)) - WorldCenter;
-				SpriteTexture.Color = COLOR_WHITE;
-				SpriteTexture.Scale = vector2{(real64)(EntityAbout->ImageWidth / 2), (real64)(EntityAbout->ImageWidth / 2)};
-
-				SpriteTexture.RadiansAngle = EntityAbout->RotationRadians;
-
-				PushRenderTexture(&GameState->RenderObjects[5], &SpriteTexture, &Memory->TransientMemory);
-
-				if (GlobalDebugSettings.DrawColliderBoxes)
-				{
-					PushRenderSquareOutline(&GameState->RenderObjects[0],
-					                        MakeSquareOutline(EntityAbout->Position - WorldCenter, EntityAbout->Collider.Width,
-					                                EntityAbout->Collider.Width, GlobalDebugSettings.DrawColor, 10),
-					                        &Memory->TransientMemory);
-				}
-
-			}
-			else
-			{
-				PushRenderSquare(&GameState->RenderObjects[9],
-				                 MakeSquare(EntityAbout->Position - WorldCenter, EntityAbout->Collider.Width, EntityAbout->Color),
-				                 &Memory->TransientMemory);
-
-				if (GlobalDebugSettings.DrawColliderBoxes)
-				{
-					PushRenderSquareOutline(&GameState->RenderObjects[0],
-					                        MakeSquareOutline(EntityAbout->Position - WorldCenter, EntityAbout->Collider.Width,
-					                                EntityAbout->Collider.Width, GlobalDebugSettings.DrawColor, 10),
-					                        &Memory->TransientMemory);
+					CollisionDetected = true;
+					EntityHit = EntityChecking;
 				}
 			}
 		}
+
+		if (!CollisionDetected)
+		{
+			EntityAbout->Position = NewTestPos;
+			EntityAbout->Velocity = (Acceleration * 0.9f) + EntityAbout->Velocity;
+		}
+		else
+		{
+			if (!EntityAbout->Collider.IsColliding)
+			{
+				EntityAbout->Collider.OnCollide = true;
+			}
+			if (!EntityHit->Collider.IsColliding)
+			{
+				EntityHit->Collider.OnCollide = true;
+			}
+
+			EntityHit->Collider.IsColliding = true;
+			EntityHit->Collider.CollidingWith = EntityAbout;
+			EntityAbout->Collider.IsColliding = true;
+			EntityAbout->Collider.CollidingWith = EntityHit;
+
+			EntityHit->ForceOn = EntityHit->ForceOn + EntityAbout->ForceOn;
+
+			uint32 WidthSum = (EntityHit->Collider.Width / 2) + (EntityAbout->Collider.Width / 2);
+
+			vector2 NewPos = NewTestPos;
+			vector2 NewVelocity = (Acceleration * 0.9f) + EntityAbout->Velocity;
+
+			vector2 CardinalRelDir = Vector2GetCardinalDirection(EntityAbout->Position, EntityHit->Position, WidthSum);
+			EntityAbout->Collider.CollideDirection = CardinalRelDir;
+
+			//NOTE this is used for more advanced collision detection, doesn't work but the concept is there
+			#if 0
+			if (CardinalRelDir.X == 1)
+			{
+				NewVelocity.X = 0;
+				NewPos.X = EntityHit->Position.X + WidthSum + 0.1f;
+			}
+			if (CardinalRelDir.X == -1)
+			{
+				NewVelocity.X = 0;
+				NewPos.X = EntityHit->Position.X - WidthSum - 0.1f;
+				EntityAbout->Collider.CollideDirection = vector2{ -1, 0};
+			}
+			if (CardinalRelDir.Y == 1)
+			{
+				NewVelocity.Y = 0;
+				NewPos.Y = EntityHit->Position.Y + WidthSum + 0.1f;
+				EntityAbout->Collider.CollideDirection = vector2{0, 1};
+			}
+			if (CardinalRelDir.Y == -1)
+			{
+				NewVelocity.Y = 0;
+				NewPos.Y = EntityHit->Position.Y - WidthSum - 0.1f;
+				EntityAbout->Collider.CollideDirection = vector2{0, -1};
+			}
+
+			EntityAbout->Position = NewPos;
+			EntityAbout->Velocity = NewVelocity;
+			#endif
+		}
+
+		EntityAbout->ForceOn = VECTOR2_ZERO;
+
+		if (!EntityAbout->Image)
+		{
+			PushRenderSquare(&GameState->RenderObjects[9],
+			                 MakeSquare(EntityAbout->Position - WorldCenter, EntityAbout->Collider.Width, EntityAbout->Color),
+			                 &Memory->TransientMemory);
+
+			if (GlobalDebugSettings.DrawColliderBoxes)
+			{
+				PushRenderSquareOutline(&GameState->RenderObjects[0],
+				                        MakeSquareOutline(EntityAbout->Position - WorldCenter, EntityAbout->Collider.Width,
+				                                EntityAbout->Collider.Width, GlobalDebugSettings.DrawColor, 10),
+				                        &Memory->TransientMemory);
+			}
+		}
+	}
+
+	//TODO find a better way to do this
+	uint32 CrawlerRemovingIndex = 100000;
+
+	for (uint32 CrawlerIndex = 1;
+	     CrawlerIndex <= GameState->WallCrawlers->LinkCount;
+	     CrawlerIndex++)
+	{
+		wall_crawler *Crawler = (wall_crawler *)GetLinkData(GameState->WallCrawlers, CrawlerIndex);
+
+		if (!Crawler->Entity->Dead)
+		{
+
+			gl_texture SpriteTexture = {};
+			SpriteTexture.Image = Crawler->Entity->Image;
+			SpriteTexture.Center = (Crawler->Entity->Position + (Crawler->ImageOffset * Crawler->ForwardDirection)) - WorldCenter;
+			SpriteTexture.Color = COLOR_WHITE;
+			SpriteTexture.Scale = vector2{(real64)(Crawler->Entity->ImageWidth / 2), (real64)(Crawler->Entity->ImageWidth / 2)};
+
+			SpriteTexture.RadiansAngle = Crawler->Entity->RotationRadians;
+
+			PushRenderTexture(&GameState->RenderObjects[5], &SpriteTexture, &Memory->TransientMemory);
+
+			if (GlobalDebugSettings.DrawColliderBoxes)
+			{
+				PushRenderSquareOutline(&GameState->RenderObjects[0],
+				                        MakeSquareOutline(Crawler->Entity->Position - WorldCenter, Crawler->Entity->Collider.Width,
+				                                Crawler->Entity->Collider.Width, GlobalDebugSettings.DrawColor, 10),
+				                        &Memory->TransientMemory);
+
+				PushRenderSquare(&GameState->RenderObjects[0],
+				                 MakeSquare(GridToWorldPos(Crawler->GridPos, GameState->LevelGrid.CellSize) - WorldCenter, GameState->LevelGrid.CellSize,
+				                            color{1.0f, 0.0f, 0.0f, 0.5f}),
+				                 &Memory->TransientMemory);
+			}
+		}
+		else
+		{
+			CrawlerRemovingIndex = CrawlerIndex;
+		}
+	}
+
+	//TODO find a better way to do this
+	if (CrawlerRemovingIndex != 100000)
+	{
+		RemoveLink(GameState->WallCrawlers, CrawlerRemovingIndex);
 	}
 }
 

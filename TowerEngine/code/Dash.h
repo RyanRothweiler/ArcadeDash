@@ -5,11 +5,15 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #define GLFW_EXPOSE_NATIVE_WGL
 
+
+
 #include <windows.h>
 #include "GLFW/glfw3.h"
 #include "GLFW/glfw3native.h"
 #include <xinput.h>
 #include <dsound.h>
+
+
 
 #define internal static
 #define global_variable static
@@ -28,6 +32,9 @@
 	#define Assert(Expression)
 	#define AssertM(Expression, Message)
 #endif
+
+#define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
+
 
 
 typedef _int8 int8;
@@ -65,6 +72,7 @@ struct memory_arena
 	uint64 Size;
 	void *Memory;
 	uint8 *Head;
+	uint8 *EndOfMemory;
 };
 
 struct game_memory
@@ -92,7 +100,7 @@ struct game_memory
 #include "vector2.cpp"
 #include "Color.cpp"
 #include "String.cpp"
-#include "TransientMemory.cpp"
+#include "MemoryAllocator.cpp"
 
 struct game_audio_output_buffer
 {
@@ -200,12 +208,12 @@ struct gl_square_outline
 	gl_line TopLine;
 };
 
-#include "LinkedList.cpp"
 
 enum entity_type
 {
 	EntityTypeWall,
 	EntityTypeEnemy,
+	EntityTypePlayer,
 };
 
 struct active_entity;
@@ -220,12 +228,14 @@ struct box_collider
 	vector2 CollideDirection;
 };
 
-//TODO use this
 struct wall_crawler
 {
 	vector2 ForwardDirection;
 	vector2 ImageOffset;
-	vector2 CurrentGridPos;
+	vector2 GridPos;
+	vector2 DirMoving;
+
+	active_entity *Entity;
 };
 
 struct active_entity
@@ -236,8 +246,6 @@ struct active_entity
 
 	real32 MovementSpeed;
 
-	vector2 ForwardDirection;
-	vector2 ImageOffset;
 	uint16 ImageWidth;
 	real64 RotationRadians;
 	loaded_image *Image;
@@ -245,16 +253,19 @@ struct active_entity
 
 	box_collider Collider;
 
-	bool32 Alive;
 	entity_type Type;
+
+	bool32 Dead;
 };
+
+#include "LinkedList.cpp"
 
 struct player
 {
 	vector2 MovingDirection;
 	real32 SpeedCoeficient;
 	real32 BaseSpeed;
-	active_entity Entity;
+	active_entity *Entity;
 
 	uint64 DashStartFrame;
 	uint64 DashFrameLength;
@@ -307,18 +318,13 @@ struct game_state
 	loaded_image TestImage;
 	loaded_image WallCrawlerImage;
 
-	uint32 EntityBucketCount;
-	active_entity EntityBucket[200];
-
+	//NOTE render layers reservation
+	// 0 - for debugging visualization
 	uint32 RenderLayersCount;
 	list_head RenderObjects[10];
 
-	uint32 WallCrawlersCount;
-	active_entity *WallCrawlers[300];
-
-	//TODO change this to a list, first need to expand list to use given memory.
-	uint32 WorldEntityCount;
-	active_entity *WorldEntities[300];
+	list_head *WallCrawlers;
+	list_head *WorldEntities;
 
 	real64 TimeRate;
 
