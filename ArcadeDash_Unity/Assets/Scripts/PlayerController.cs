@@ -76,14 +76,14 @@ public class PlayerController : MonoBehaviour
 		if (enemiesLeft == 0)
 		{
 			GlobalState.instance.enemyCount++;
-			Application.LoadLevel(0);
+			Application.LoadLevel("MiddleReady");
 		}
 	}
 
 	public void PlayerKill()
 	{
 		GlobalState.instance.enemyCount = 10;
-		Application.LoadLevel(0);
+		Application.LoadLevel("Dead");
 	}
 
 	public void OnCollisionEnter2D(Collision2D coll)

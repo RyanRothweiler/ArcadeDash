@@ -9,12 +9,17 @@ public class LevelCreator : MonoBehaviour
 	public GameObject wallFab;
 
 
+	private bool levelGenerated = false;
 	//TODO maybe remove this
 	private Vector2 levelBounds = new Vector2(15, 8);
 
-	void Start ()
+	public void Start()
 	{
-		GenerateLevel(GlobalState.instance.enemyCount);
+		if (!levelGenerated)
+		{
+			levelGenerated = true;
+			GenerateLevel(GlobalState.instance.enemyCount);
+		}
 	}
 
 	public void GenerateLevel(int enemyCount)
@@ -22,10 +27,12 @@ public class LevelCreator : MonoBehaviour
 
 		// wall generation
 		int wallCount = Random.Range(8, 13);
-		for (int index = 0;
-		     index < wallCount;
-		     index++)
+		int wallsPlaced = 0;
+		while (wallsPlaced < wallCount)
 		{
+			// get all walls before we add another
+			Wall[] walls = FindObjectsOfType(typeof(Wall)) as Wall[];
+
 			GameObject newWall = Instantiate(wallFab) as GameObject;
 
 			Vector3 newPos = new Vector3(Random.Range(-levelBounds.x, levelBounds.x),
@@ -46,10 +53,25 @@ public class LevelCreator : MonoBehaviour
 			float randomScale = Random.Range(0, 5);
 			Vector3 newScale = new Vector3(0.5f + (randomScale * scaleDir.x), 0.5f + (randomScale * scaleDir.y), 1);
 			newWall.transform.localScale = newScale;
+
+			bool wallValid = true;
+			foreach (Wall wall in walls)
+			{
+				Bounds newWallBounds = newWall.GetComponent<Collider2D>().bounds;
+				if (wall.GetComponent<Collider2D>().bounds.Intersects(newWallBounds))
+				{
+					wallValid = false;
+					Destroy(newWall);
+				}
+			}
+			if (wallValid)
+			{
+				wallsPlaced++;
+			}
 		}
 
 
-		Wall[] walls = FindObjectsOfType(typeof(Wall)) as Wall[];
+		Wall[] totalWalls = FindObjectsOfType(typeof(Wall)) as Wall[];
 
 		// enemy generation
 		int enemiesMade = 0;
@@ -64,10 +86,16 @@ public class LevelCreator : MonoBehaviour
 			newEnemy.transform.position = newPos;
 
 			bool enemyValid = true;
-			foreach (Wall wall in walls)
+			foreach (Wall wall in totalWalls)
 			{
 				Bounds enemyBounds = newEnemy.GetComponent<Collider2D>().bounds;
 				if (wall.GetComponent<Collider2D>().bounds.Intersects(enemyBounds))
+				{
+					enemyValid = false;
+					Destroy(newEnemy);
+					break;
+				}
+				if (Vector3.Distance(newEnemy.transform.position, PlayerController.instance.transform.position) < 4.5f)
 				{
 					enemyValid = false;
 					Destroy(newEnemy);
@@ -85,7 +113,16 @@ public class LevelCreator : MonoBehaviour
 					case EnemyType.WallCrawler:
 					{
 
-						GameObject baseWall = walls[Random.Range(0, walls.Length)].gameObject;
+						GameObject baseWall = null;
+						bool foundWall = false;
+						while (!foundWall)
+						{
+							baseWall = totalWalls[Random.Range(0, totalWalls.Length)].gameObject;
+							if (baseWall.transform.localScale.y < 8)
+							{
+								foundWall = true;
+							}
+						}
 
 
 						bool verticalWall;
