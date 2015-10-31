@@ -18,7 +18,7 @@ public class WallCrawler : MonoBehaviour
 	void Update ()
 	{
 		this.transform.position = this.transform.position - ((this.transform.position - currentTarget.transform.position).normalized * 0.03f);
-		// Debug.Log(Vector3.Distance(this.transform.position, currentTarget.transform.position));
+
 		if (Vector3.Distance(this.transform.position, currentTarget.transform.position) < 0.2f)
 		{
 			if (currentTarget == topTarget)

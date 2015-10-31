@@ -13,7 +13,9 @@ public class UIController : MonoBehaviour
 	{
 		int enemiesLeft = 0;
 		Enemy[] enemies = FindObjectsOfType(typeof(Enemy)) as Enemy[];
-		foreach (Enemy enemy in enemies)
+		for (int index = 0;
+		     index < enemies.Length;
+		     index++)
 		{
 			enemiesLeft++;
 		}

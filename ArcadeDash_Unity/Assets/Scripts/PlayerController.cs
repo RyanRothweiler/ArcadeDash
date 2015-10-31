@@ -18,7 +18,7 @@ public class PlayerController : MonoBehaviour
 	void Start ()
 	{
 		instance = this;
-		
+
 		attachedRend = this.GetComponent<Renderer>();
 	}
 
@@ -63,10 +63,26 @@ public class PlayerController : MonoBehaviour
 
 		Vector3 newPos = this.transform.position + new Vector3(dirMoving.x * currentSpeed * 0.15f, dirMoving.y * currentSpeed * 0.15f, 0);
 		this.transform.position = newPos;
+
+
+		int enemiesLeft = 0;
+		Enemy[] enemies = FindObjectsOfType(typeof(Enemy)) as Enemy[];
+		for (int index = 0;
+		     index < enemies.Length;
+		     index++)
+		{
+			enemiesLeft++;
+		}
+		if (enemiesLeft == 0)
+		{
+			GlobalState.instance.enemyCount++;
+			Application.LoadLevel(0);
+		}
 	}
 
 	public void PlayerKill()
 	{
+		GlobalState.instance.enemyCount = 10;
 		Application.LoadLevel(0);
 	}
 
@@ -85,7 +101,7 @@ public class PlayerController : MonoBehaviour
 			}
 		}
 
-		if (coll.gameObject.GetComponent<Wall>() || 
+		if (coll.gameObject.GetComponent<Wall>() ||
 		    coll.gameObject.GetComponent<Laser>())
 		{
 			PlayerKill();
